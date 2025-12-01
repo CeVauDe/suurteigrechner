@@ -7,6 +7,9 @@ node_modules
 # Replace as required with your build location
 /build
 
+# compiled typescript output
+/dist
+
 # Deal with environment files
 .env
 .env.*
