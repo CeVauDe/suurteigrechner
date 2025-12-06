@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
+import Calculator from './calculator'
 
 interface Entry {
   id: number
@@ -67,6 +68,7 @@ export default function Home() {
       </Head>
 
       <div className="min-h-screen py-12 px-4">
+        <Calculator />
         <div className="max-w-3xl mx-auto">
           {/* Heading */}
           <h1 className="text-6xl font-bold text-center mb-12 text-slate-100">
@@ -81,7 +83,7 @@ export default function Home() {
                   {error}
                 </div>
               )}
-              <div>
+              <div className="text-center text-slate-500 text-lg">
                 <input
                   type="text"
                   maxLength={280}
@@ -93,7 +95,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading || text.trim().length === 0}
-                  className="flex-shrink-0 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-full px-5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  className="flex-shrink-0 bg-sky-500 hover:bg-sky-600 font-medium rounded-full px-5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                 >
                   {loading ? 'Sending...' : 'Send'}
                 </button>
