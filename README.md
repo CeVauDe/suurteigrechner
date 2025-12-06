@@ -5,7 +5,7 @@ A small web application for Railway deployment that stores visitor entries in an
 ## Features
 
 - **Next.js + TypeScript** — server-side rendering and API routes
-- **Tailwind CSS** — modern utility-first styling
+- **Bootstrap CSS** — modern styling
 - **SQLite persistence** — simple file-based database with `better-sqlite3`
 - **Docker + docker-compose** — production-ready containerized deployment with persistent volumes
 - **Secure defaults** — runs as non-root user, minimal Alpine base image
@@ -110,7 +110,7 @@ railway-trial/
 ├── lib/
 │   └── db.ts             # SQLite helper functions
 ├── styles/
-│   └── globals.css       # Tailwind CSS import + global styles
+│   └── globals.css       # Bootstrap CSS import + global styles
 ├── public/               # Static assets
 ├── Dockerfile            # Multi-stage production build
 ├── docker-compose.yaml   # Local production testing with persistent volume

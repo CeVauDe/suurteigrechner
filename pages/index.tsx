@@ -81,17 +81,13 @@ export default function Home() {
                   {error}
                 </div>
               )}
-              <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-full px-4 py-3 bg-white/5 inset-ring inset-ring-white/15 hover:bg-white/10 focus-within:bg-white/10 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="size-5 fill-slate-500" aria-hidden="true">
-                  <path fillRule="evenodd" d="M2 5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5Zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H4Zm1 3.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5Zm0 2a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5Z" clipRule="evenodd" />
-                </svg>
+              <div>
                 <input
                   type="text"
                   maxLength={280}
                   value={text}
                   onChange={e => setText(e.target.value)}
                   placeholder="Leave a message..."
-                  className="bg-transparent text-white outline-none placeholder:text-slate-500 text-sm"
                   aria-label="Your message"
                 />
                 <button
