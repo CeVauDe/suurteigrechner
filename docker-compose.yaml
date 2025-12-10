@@ -3,8 +3,8 @@ services:
     build:
       context: .
       target: runner
-    image: railway-trial:prod
-    container_name: railway-trial-web
+    image: suurteigrechner:prod
+    container_name: suurteigrechner-web
     restart: unless-stopped
     ports:
       - "3000:3000"
