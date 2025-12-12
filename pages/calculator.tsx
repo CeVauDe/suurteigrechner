@@ -129,7 +129,8 @@ const Calculator = () => {
   }
 
   const handleHydrationChange = (field: string, value: string) => {
-    setHydration(Number(value));
+    hydration = Number(value);
+    setHydration(hydration);
     for (let key of IndrigentKeys) {
       const k = key as keyof IngridientState;
       if (!state[k].constant) {
@@ -141,8 +142,9 @@ const Calculator = () => {
   }
 
   const handleStarterHydrationChange = (value: string) => {
-    setStarterHydration(Number(value));
-    setHydration(calculateHydration(state, starterHydration));
+    starterHydration = Number(value);
+    setStarterHydration(starterHydration);
+    setHydration(Math.round(calculateHydration(state, starterHydration)));
   }
 
 
@@ -192,7 +194,7 @@ const Calculator = () => {
         <div className="row mb-3 align-items-center">
           <div className="col-auto">
             <label htmlFor="input1" className="col-form-label">
-              Hydration Starter {counter}:
+              Hydration Starter:
             </label>
           </div>
           <div className="col-auto">
