@@ -122,12 +122,40 @@ railway-trial/
 
 ## Development
 
-- `npm run dev` — Start dev server (hot reload)
+### Getting Started
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Run in development mode (hot reload):
+```bash
+npm run dev
+```
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+The dev server will create a local SQLite database at `./data/db.sqlite`.
+
+### Development Scripts
+
+- `npm run dev` — Start dev server with hot reload (service worker disabled)
 - `npm run build` — Build for production
 - `npm start` — Run production build
 - `npm run lint` — Run ESLint
 
-## Testing locally (quick smoke test)
+### Progressive Web App (PWA)
+
+This app is configured as a PWA with Next.js PWA support via `next-pwa`:
+
+- **Service worker disabled in development** — The service worker is only active in production to prevent caching issues during development
+- **Production PWA features** — In production builds, the app can be installed on mobile devices and works offline
+- **Caching strategy** — Static assets and pages are cached for faster load times
+
+When running `npm run build` and `npm start`, you'll have full PWA capabilities including offline support and installability.
+
+### Testing locally (quick smoke test)
 
 ```bash
 # Start dev server
