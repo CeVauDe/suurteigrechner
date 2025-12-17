@@ -1,8 +1,17 @@
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
+import { useState, useEffect } from 'react'
+import { useServiceWorkerUpdate } from '../lib/useServiceWorkerUpdate'
 import '../styles/globals.css'
 
 export default function App({ Component, pageProps }: AppProps) {
+  const { updateAvailable, handleUpdate } = useServiceWorkerUpdate()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <>
       <Head>
@@ -14,6 +23,19 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="icon" type="image/png" href="/icon-192x192.png" />
       </Head>
+
+      {mounted && updateAvailable && (
+        <div className="fixed bottom-4 right-4 bg-blue-600 text-white rounded-lg shadow-lg p-4 max-w-sm z-50">
+          <p className="mb-3 text-sm">A new version of the app is available!</p>
+          <button
+            onClick={handleUpdate}
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded transition-colors"
+          >
+            Update Now
+          </button>
+        </div>
+      )}
+
       <Component {...pageProps} />
     </>
   )
