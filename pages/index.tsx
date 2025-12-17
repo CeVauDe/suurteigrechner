@@ -13,10 +13,30 @@ export default function Home() {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
-    fetchLatest()
+    // Set initial online status
+    setIsOnline(navigator.onLine)
+
+    // Listen for online/offline events
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
+
+  useEffect(() => {
+    if (isOnline) {
+      fetchLatest()
+    }
+  }, [isOnline])
 
   async function fetchLatest() {
     try {
@@ -78,6 +98,13 @@ export default function Home() {
             Guestbook
           </h1>
 
+          {/* Offline Notice */}
+          {!isOnline && (
+            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center text-yellow-400">
+              <p className="text-sm">You are offline. Guestbook features are not available, but the calculator works fine!</p>
+            </div>
+          )}
+
           {/* Input Form */}
           <div className="mb-16">
             <form onSubmit={submit} className="max-w-2xl mx-auto">
@@ -94,13 +121,14 @@ export default function Home() {
                   onChange={e => setText(e.target.value)}
                   placeholder="Leave a message..."
                   aria-label="Your message"
+                  disabled={!isOnline}
                 />
                 <button
                   type="submit"
-                  disabled={loading || text.trim().length === 0}
+                  disabled={loading || text.trim().length === 0 || !isOnline}
                   className="flex-shrink-0 bg-sky-500 hover:bg-sky-600 font-medium rounded-full px-5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                 >
-                  {loading ? 'Sending...' : 'Send'}
+                  {!isOnline ? 'Offline' : loading ? 'Sending...' : 'Send'}
                 </button>
               </div>
             </form>
@@ -108,7 +136,11 @@ export default function Home() {
 
           {/* Messages List */}
           <div className="space-y-8">
-            {entries.length === 0 ? (
+            {!isOnline && entries.length === 0 ? (
+              <p className="text-center text-slate-500 text-lg">
+                Guestbook entries are not available offline.
+              </p>
+            ) : entries.length === 0 ? (
               <p className="text-center text-slate-500 text-lg">
                 No messages yet. Be the first!
               </p>
