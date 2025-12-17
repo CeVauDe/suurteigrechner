@@ -64,7 +64,10 @@ export default function Home() {
       <Head>
         <title>Suurteigrechner</title>
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="description" content="A modern guestbook powered by Next.js and SQLite" />
+        <meta name="description" content="A sourdough calculator and starter management tool" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Suurteigrechner" />
       </Head>
 
       <div className="min-h-screen py-12 px-4">
