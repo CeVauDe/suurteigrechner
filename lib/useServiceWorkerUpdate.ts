@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 export function useServiceWorkerUpdate() {
   const [updateAvailable, setUpdateAvailable] = useState(false)
-  const [waitingServiceWorker, setWaitingServiceWorker] = useState<ServiceWorkerContainer | null>(null)
+  const [waitingServiceWorker, setWaitingServiceWorker] = useState<ServiceWorker | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
