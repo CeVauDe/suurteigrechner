@@ -1,4 +1,4 @@
-# railway-trial — Next.js + TypeScript + SQLite web app
+# Suurteigrechner — Next.js + TypeScript + SQLite web app
 
 A small web application for Railway deployment that stores visitor entries in an SQLite database and displays the 10 most recent submissions.
 

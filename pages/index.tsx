@@ -62,7 +62,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Railway Guestbook</title>
+        <title>Suurteigrechner</title>
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="description" content="A modern guestbook powered by Next.js and SQLite" />
       </Head>
