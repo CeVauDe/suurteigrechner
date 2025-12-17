@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Next.js production build
 
 # ---------- DEPENDENCIES ----------
-FROM node:20-alpine AS deps
+FROM node:20-alpine3.23 AS deps
 # Install build dependencies for native modules (better-sqlite3)
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
@@ -9,7 +9,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 # ---------- BUILDER ----------
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.23 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -20,7 +20,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ---------- RUNNER ----------
-FROM node:20-alpine AS runner
+FROM node:20-alpine3.23 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
