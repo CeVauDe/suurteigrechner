@@ -17,13 +17,13 @@ export function NumberField({ label, name, value, checked, onChange, onChecked, 
   return (
     <div className="row mb-3 align-items-center">
       <div className="col-auto">
-        <label htmlFor="input2" className="col-form-label">
+        <label htmlFor={name} className="col-form-label">
           {label}
         </label>
       </div>
       <div className="col-auto">
         <div className="input-group">
-          <input type="number" className="form-control" value={value} onChange={(e) => onChange(name, e.target.value)} />
+          <input type="number" id={name} className="form-control" value={value} onChange={(e) => onChange(name, e.target.value)} />
           <span className="input-group-text" id="basic-addon1">{unit}</span>
         </div>
       </div>
@@ -193,13 +193,13 @@ const Calculator = () => {
         {/* Feld 1: Hydration Starter */}
         <div className="row mb-3 align-items-center">
           <div className="col-auto">
-            <label htmlFor="input1" className="col-form-label">
+            <label htmlFor="starterHydration" className="col-form-label">
               Hydration Starter:
             </label>
           </div>
           <div className="col-auto">
             <div className="input-group">
-              <input type="number" className="form-control" value={starterHydration} min="0" max="100"
+              <input type="number" id="starterHydration" className="form-control" value={starterHydration} min="0" max="100"
                 onChange={(e) => handleStarterHydrationChange(e.target.value)} />
               <span className="input-group-text" id="basic-addon1">%</span>
             </div>
