@@ -4,32 +4,30 @@
 import React, { useState } from 'react';
 
 type NumberFieldProps = {
-  label:string,
+  label: string,
   state: NumberFieldClass,
   name: string,
-  onChange:(name: any, value: string) => void,
+  onChange: (name: any, value: string) => void,
   onChecked: (value: any) => void
 }
 
-export function NumberField({label, state, name, onChange , onChecked} :NumberFieldProps) {
+export function NumberField({ label, state, name, onChange, onChecked }: NumberFieldProps) {
   return (
     <div className="row mb-3 align-items-center">
       <div className="col-auto">
-        <label htmlFor={name} className="col-form-label">
+        <label htmlFor={"numberInput-".concat(name)} className="col-form-label">
           {label}
         </label>
       </div>
       <div className="col-auto">
         <div className="input-group">
-          <input type="number" className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} />
+          <div className='input-group-text'>
+            <span title="Konstant halten">
+              <input type="checkbox" className="form-check-input" checked={state.constant} onChange={onChecked} disabled={state.diseableConst} />
+            </span>
+          </div>
+          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} />
           <span className="input-group-text" id="basic-addon1">{state.unit}</span>
-        </div>
-      </div>
-      <div className="col-auto">
-        <div className="form-check">
-          <span title="Konstant halten" style={{ marginLeft: '4px', cursor: 'help' }}>
-            <input type="checkbox" className="form-check-input" checked={state.constant} onChange={onChecked} disabled={state.diseableConst}/>
-          </span>
         </div>
       </div>
     </div>
@@ -46,7 +44,7 @@ class NumberFieldClass {
     this.constant = constant;
     this.diseableConst = false;
     this.diseableConst = diseableConst;
-    this.unit=unit;
+    this.unit = unit;
   }
   toggle(): void {
     this.constant = !this.constant
@@ -56,14 +54,15 @@ class NumberFieldClass {
 class Ingridient extends NumberFieldClass {
   divident: number;
   calculate: (state: CalculaterState, starterHydration: number) => number;
-  constructor(value: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number,unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
+  constructor(value: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
     super(value, unit, constant, diseableConst);
     this.divident = divident;
     this.calculate = calculate;
   }
 };
 
-const IndrigentKeys = ["flour", "water", "starter"]
+const IndrigentKeys = ["flour", "water", "starter"];
+const CalcluaterKeys = IndrigentKeys.concat(["hydration"]);
 
 type CalculaterState = {
   flour: Ingridient;
@@ -120,8 +119,24 @@ const Calculator = () => {
   const toggle = (field: keyof CalculaterState) => {
     if (state[field].constant) {
       counter--;
+      if (counter < 3) {
+        for (let key of CalcluaterKeys) {
+          const k = key as keyof CalculaterState;
+          state[k].diseableConst = false;
+          update(k, state[k]);
+        }
+      }
     } else {
       counter++;
+      if (counter >= 3) {
+        for (let key of CalcluaterKeys) {
+          const k = key as keyof CalculaterState;
+          if (!state[k].constant && k != field) {
+            state[k].diseableConst = true;
+            update(k, state[k]);
+          }
+        }
+      }
     }
     setCounter(counter);
     state[field].toggle();
@@ -221,8 +236,8 @@ const Calculator = () => {
         </div>
 
         <NumberField label='Mehl' name='flour' state={state.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
-        <NumberField label='Wasser' name='water' state={state.water} onChange={handleChange} onChecked={() => toggle("water")}/>
-        <NumberField label='Starter' name='starter' state={state.starter} onChange={handleChange} onChecked={() => toggle("starter")}/>
+        <NumberField label='Wasser' name='water' state={state.water} onChange={handleChange} onChecked={() => toggle("water")} />
+        <NumberField label='Starter' name='starter' state={state.starter} onChange={handleChange} onChecked={() => toggle("starter")} />
         <NumberField label='Hydration' name='hydration' state={state.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
       </form>
 
