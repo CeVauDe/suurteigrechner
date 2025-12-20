@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 
 type NumberFieldProps = {
   label: string,
-  state: NumberFieldClass,
+  state: NumberFieldState,
   name: string,
   onChange: (name: any, value: string) => void,
   onChecked: (value: any) => void
@@ -26,7 +26,7 @@ export function NumberField({ label, state, name, onChange, onChecked }: NumberF
               <input type="checkbox" className="form-check-input" checked={state.constant} onChange={onChecked} disabled={state.diseableConst} />
             </span>
           </div>
-          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} />
+          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} min={state.min} max={state.max}/>
           <span className="input-group-text" id="basic-addon1">{state.unit}</span>
         </div>
       </div>
@@ -34,15 +34,18 @@ export function NumberField({ label, state, name, onChange, onChecked }: NumberF
   );
 }
 
-class NumberFieldClass {
+class NumberFieldState {
   value: number;
   constant: boolean;
   diseableConst: boolean;
   unit: string;
-  constructor(value: number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
+  min: number;
+  max: number;
+  constructor(value: number, min: number, max: number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
     this.value = value;
     this.constant = constant;
-    this.diseableConst = false;
+    this.min = min;
+    this.max = max;
     this.diseableConst = diseableConst;
     this.unit = unit;
   }
@@ -51,11 +54,11 @@ class NumberFieldClass {
   }
 };
 
-class Ingridient extends NumberFieldClass {
+class Ingridient extends NumberFieldState {
   divident: number;
   calculate: (state: CalculaterState, starterHydration: number) => number;
-  constructor(value: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
-    super(value, unit, constant, diseableConst);
+  constructor(value: number, min: number, max: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
+    super(value, min, max, unit, constant, diseableConst);
     this.divident = divident;
     this.calculate = calculate;
   }
@@ -68,7 +71,7 @@ type CalculaterState = {
   flour: Ingridient;
   water: Ingridient;
   starter: Ingridient;
-  hydration: NumberFieldClass;
+  hydration: NumberFieldState;
 };
 
 const Calculator = () => {
@@ -104,10 +107,10 @@ const Calculator = () => {
 
 
   const [state, setState] = React.useState<CalculaterState>({
-    flour: new Ingridient(1000, 100, calculateFlour),
-    water: new Ingridient(670, 67, calculateWater),
-    starter: new Ingridient(250, 25, calculateStarter),
-    hydration: new NumberFieldClass(71, "%")
+    flour: new Ingridient(1000, 0, 50000, 100, calculateFlour),
+    water: new Ingridient(670, 0, 50000, 67, calculateWater),
+    starter: new Ingridient(250, 0, 50000, 25, calculateStarter),
+    hydration: new NumberFieldState(71, 0, 100, "%")
   });
 
 
@@ -165,17 +168,21 @@ const Calculator = () => {
   }
 
 
-  const update = (field: keyof CalculaterState, update: NumberFieldClass) => {
+  const update = (field: keyof CalculaterState, update: NumberFieldState) => {
     setState(prev => ({
       ...prev,
       [field]: update instanceof Ingridient ? new Ingridient(
         update.value,
+        update.min,
+        update.max,
         update.divident,
         update.calculate,
         update.unit,
         update.constant,
         update.diseableConst
-      ) : new NumberFieldClass(update.value,
+      ) : new NumberFieldState(update.value,
+        update.min,
+        update.max,
         update.unit,
         update.constant,
         update.diseableConst)
