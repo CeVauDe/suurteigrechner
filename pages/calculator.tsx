@@ -4,16 +4,14 @@
 import React, { useState } from 'react';
 
 type NumberFieldProps = {
-  label: string;
-  name: string;
-  value: number;
-  checked: boolean;
-  unit: string;
-  onChange: (name: any, value: string) => void;
-  onChecked: (value: any) => void;
-};
+  label:string,
+  state: NumberFieldClass,
+  name: string,
+  onChange:(name: any, value: string) => void,
+  onChecked: (value: any) => void
+}
 
-export function NumberField({ label, name, value, checked, onChange, onChecked, unit }: NumberFieldProps) {
+export function NumberField({label, state, name, onChange , onChecked} :NumberFieldProps) {
   return (
     <div className="row mb-3 align-items-center">
       <div className="col-auto">
@@ -23,14 +21,14 @@ export function NumberField({ label, name, value, checked, onChange, onChecked, 
       </div>
       <div className="col-auto">
         <div className="input-group">
-          <input type="number" id={name} className="form-control" value={value} onChange={(e) => onChange(name, e.target.value)} />
-          <span className="input-group-text" id="basic-addon1">{unit}</span>
+          <input type="number" className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} />
+          <span className="input-group-text" id="basic-addon1">{state.unit}</span>
         </div>
       </div>
       <div className="col-auto">
         <div className="form-check">
           <span title="Konstant halten" style={{ marginLeft: '4px', cursor: 'help' }}>
-            <input type="checkbox" className="form-check-input" checked={checked} onChange={onChecked} />
+            <input type="checkbox" className="form-check-input" checked={state.constant} onChange={onChecked} disabled={state.diseableConst}/>
           </span>
         </div>
       </div>
@@ -38,76 +36,88 @@ export function NumberField({ label, name, value, checked, onChange, onChecked, 
   );
 }
 
-class Ingridient {
+class NumberFieldClass {
   value: number;
-  divident: number;
   constant: boolean;
-  calculate: (state: IngridientState, starterHydration: number, hydration: number) => number;
-  constructor(value: number, divident: number, constant: boolean, calculate: (state: IngridientState, starterHydration: number, hydration: number) => number) {
+  diseableConst: boolean;
+  unit: string;
+  constructor(value: number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
     this.value = value;
-    this.divident = divident;
     this.constant = constant;
-    this.calculate = calculate;
+    this.diseableConst = false;
+    this.diseableConst = diseableConst;
+    this.unit=unit;
   }
   toggle(): void {
     this.constant = !this.constant
   }
 };
 
+class Ingridient extends NumberFieldClass {
+  divident: number;
+  calculate: (state: CalculaterState, starterHydration: number) => number;
+  constructor(value: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number,unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
+    super(value, unit, constant, diseableConst);
+    this.divident = divident;
+    this.calculate = calculate;
+  }
+};
+
 const IndrigentKeys = ["flour", "water", "starter"]
 
-type IngridientState = {
+type CalculaterState = {
   flour: Ingridient;
   water: Ingridient;
   starter: Ingridient;
+  hydration: NumberFieldClass;
 };
 
 const Calculator = () => {
-  const calculateHydration = (state: IngridientState, starterHydration: number) => {
+  const calculateHydration = (state: CalculaterState, starterHydration: number) => {
     const sH = starterHydration / 100;
     return (state.water.value + (state.starter.value * (sH / (1 + sH)))) / (state.flour.value + (state.starter.value * (1 / (1 + sH)))) * 100
   }
 
-  const calculateFlour = (state: IngridientState, starterHydration: number, hydration: number) => {
+  const calculateFlour = (state: CalculaterState, starterHydration: number) => {
     const sH = starterHydration / 100;
     const starterFlour = state.starter.value * (1 / (1 + sH));
     const starterWater = state.starter.value * (sH / (1 + sH));
-    const H = hydration / 100;
+    const H = state.hydration.value / 100;
     return (state.water.value + starterWater - (starterFlour * H)) / H;
   }
 
-  const calculateWater = (state: IngridientState, starterHydration: number, hydration: number) => {
+  const calculateWater = (state: CalculaterState, starterHydration: number) => {
     const sH = starterHydration / 100;
     const starterFlour = state.starter.value * (1 / (1 + sH));
     const starterWater = state.starter.value * (sH / (1 + sH));
-    const H = hydration / 100;
+    const H = state.hydration.value / 100;
     return H * state.flour.value + H * starterFlour - starterWater;
   }
 
-  const calculateStarter = (state: IngridientState, starterHydration: number, hydration: number) => {
+  const calculateStarter = (state: CalculaterState, starterHydration: number) => {
     const sH = starterHydration / 100;
     const cFlour = (1 / (1 + sH));
     const cWater = (sH / (1 + sH));
-    const H = hydration / 100;
+    const H = state.hydration.value / 100;
     return ((H * state.flour.value) - state.water.value) / (cWater - (H * cFlour));
   }
 
 
 
-  const [state, setState] = React.useState<IngridientState>({
-    flour: new Ingridient(1000, 100, false, calculateFlour),
-    water: new Ingridient(670, 67, false, calculateWater),
-    starter: new Ingridient(250, 25, false, calculateStarter)
+  const [state, setState] = React.useState<CalculaterState>({
+    flour: new Ingridient(1000, 100, calculateFlour),
+    water: new Ingridient(670, 67, calculateWater),
+    starter: new Ingridient(250, 25, calculateStarter),
+    hydration: new NumberFieldClass(71, "%")
   });
+
 
   let [counter, setCounter] = useState<number>(0);
   let [starterHydration, setStarterHydration] = useState<number>(100);
-  let [hydration, setHydration] = useState<number>(71);
-  let [hydrationConst, setHydrationConst] = useState<boolean>(false);
 
 
 
-  const toggle = (field: keyof IngridientState) => {
+  const toggle = (field: keyof CalculaterState) => {
     if (state[field].constant) {
       counter--;
     } else {
@@ -118,23 +128,14 @@ const Calculator = () => {
     update(field, state[field]);
   };
 
-  const toggleHydration = () => {
-    if (hydrationConst) {
-      counter--;
-    } else {
-      counter++;
-    }
-    setCounter(counter);
-    setHydrationConst(!hydrationConst);
-  }
-
   const handleHydrationChange = (field: string, value: string) => {
-    hydration = Number(value);
-    setHydration(hydration);
+    state.hydration.value = Number(value);
+    update("hydration", state.hydration);
     for (let key of IndrigentKeys) {
-      const k = key as keyof IngridientState;
-      if (!state[k].constant) {
-        state[k].value = Math.round(state[k].calculate(state, starterHydration, hydration));
+      const k = key as keyof CalculaterState;
+      const ingridient = state[k] as Ingridient;
+      if (!ingridient.constant) {
+        state[k].value = Math.round(ingridient.calculate(state, starterHydration));
         update(k, state[k]);
         break;
       }
@@ -144,47 +145,57 @@ const Calculator = () => {
   const handleStarterHydrationChange = (value: string) => {
     starterHydration = Number(value);
     setStarterHydration(starterHydration);
-    setHydration(Math.round(calculateHydration(state, starterHydration)));
+    state.hydration.value = Math.round(calculateHydration(state, starterHydration));
+    update("hydration", state.hydration);
   }
 
 
-  const update = (field: keyof IngridientState, update: Ingridient) => {
+  const update = (field: keyof CalculaterState, update: NumberFieldClass) => {
     setState(prev => ({
       ...prev,
-      [field]: new Ingridient(
+      [field]: update instanceof Ingridient ? new Ingridient(
         update.value,
         update.divident,
+        update.calculate,
+        update.unit,
         update.constant,
-        update.calculate
-      )
+        update.diseableConst
+      ) : new NumberFieldClass(update.value,
+        update.unit,
+        update.constant,
+        update.diseableConst)
     }));
   };
 
 
 
-  const handleChange = (field: keyof IngridientState, value: string) => {
+  const handleChange = (field: keyof CalculaterState, value: string) => {
     state[field].value = Number(value);
     update(field, state[field]);
-    if (counter == 0) {
-      const factor = Number(value) / state[field].divident;
+    if (counter == 0 && IndrigentKeys.includes(field)) {
+      const changedIngridient = state[field] as Ingridient;
+      const factor = Number(value) / changedIngridient.divident;
       for (let key of IndrigentKeys) {
-        const k = key as keyof IngridientState;
+        const k = key as keyof CalculaterState;
         if (k != field) {
-          state[k].value = Math.round(state[k].divident * factor);
+          const ingridient = state[k] as Ingridient;
+          state[k].value = Math.round(ingridient.divident * factor);
           update(k, state[k])
         }
       }
     } else {
       for (let key of IndrigentKeys) {
-        const k = key as keyof IngridientState;
+        const k = key as keyof CalculaterState;
         if (k != field && !state[k].constant) {
-          state[k].value = Math.round(state[k].calculate(state, starterHydration, hydration));
+          const ingridient = state[k] as Ingridient;
+          state[k].value = Math.round(ingridient.calculate(state, starterHydration));
           update(k, state[k]);
           break;
         }
       }
     }
-    setHydration(Math.round(calculateHydration(state, starterHydration)));
+    state.hydration.value = Math.round(calculateHydration(state, starterHydration));
+    update("hydration", state.hydration);
   };
 
   return (
@@ -209,10 +220,10 @@ const Calculator = () => {
           </div>
         </div>
 
-        <NumberField label='Mehl' name='flour' value={state.flour.value} checked={state.flour.constant} onChange={handleChange} onChecked={() => toggle("flour")} unit="g" />
-        <NumberField label='Wasser' name='water' value={state.water.value} checked={state.water.constant} onChange={handleChange} onChecked={() => toggle("water")} unit="g" />
-        <NumberField label='Starter' name='starter' value={state.starter.value} checked={state.starter.constant} onChange={handleChange} onChecked={() => toggle("starter")} unit="g" />
-        <NumberField label='Hydration' name='hydration' value={hydration} checked={hydrationConst} onChange={handleHydrationChange} onChecked={toggleHydration} unit="%" />
+        <NumberField label='Mehl' name='flour' state={state.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
+        <NumberField label='Wasser' name='water' state={state.water} onChange={handleChange} onChecked={() => toggle("water")}/>
+        <NumberField label='Starter' name='starter' state={state.starter} onChange={handleChange} onChecked={() => toggle("starter")}/>
+        <NumberField label='Hydration' name='hydration' state={state.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
       </form>
 
     </>
