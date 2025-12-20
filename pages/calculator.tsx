@@ -26,7 +26,7 @@ export function NumberField({ label, state, name, onChange, onChecked }: NumberF
               <input type="checkbox" className="form-check-input" checked={state.constant} onChange={onChecked} disabled={state.diseableConst} />
             </span>
           </div>
-          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} min={state.min} max={state.max}/>
+          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} min={state.min} max={state.max} />
           <span className="input-group-text" id="basic-addon1">{state.unit}</span>
         </div>
       </div>
@@ -72,12 +72,17 @@ type CalculaterState = {
   water: Ingridient;
   starter: Ingridient;
   hydration: NumberFieldState;
+  totalDough: NumberFieldState;
 };
 
 const Calculator = () => {
   const calculateHydration = (state: CalculaterState, starterHydration: number) => {
     const sH = starterHydration / 100;
     return (state.water.value + (state.starter.value * (sH / (1 + sH)))) / (state.flour.value + (state.starter.value * (1 / (1 + sH)))) * 100
+  }
+
+  const calculateTotalDough = (state: CalculaterState) => {
+    return state.flour.value + state.water.value + state.starter.value;
   }
 
   const calculateFlour = (state: CalculaterState, starterHydration: number) => {
@@ -110,12 +115,14 @@ const Calculator = () => {
     flour: new Ingridient(1000, 0, 50000, 100, calculateFlour),
     water: new Ingridient(670, 0, 50000, 67, calculateWater),
     starter: new Ingridient(250, 0, 50000, 25, calculateStarter),
-    hydration: new NumberFieldState(71, 0, 100, "%")
+    hydration: new NumberFieldState(71, 0, 100, "%"),
+    totalDough: new NumberFieldState(1920, 0, 100000, "g")
   });
 
 
   let [counter, setCounter] = useState<number>(0);
   let [starterHydration, setStarterHydration] = useState<number>(100);
+  let [disableTotal, setDisableTotal] = useState<boolean>(false);
 
 
 
@@ -144,6 +151,22 @@ const Calculator = () => {
     setCounter(counter);
     state[field].toggle();
     update(field, state[field]);
+    if (state[field] instanceof Ingridient) {
+      if (state[field].constant) {
+        disableTotal = true;
+        setDisableTotal(disableTotal);
+      } else {
+        let enableTotal = true;
+        for (let key of IndrigentKeys) {
+          const k = key as keyof CalculaterState;
+          if (state[k].constant) enableTotal = false;          
+        }
+        if (enableTotal) {
+          disableTotal = false,
+          setDisableTotal(disableTotal);
+        }        
+      }
+    }
   };
 
   const handleHydrationChange = (field: string, value: string) => {
@@ -158,6 +181,26 @@ const Calculator = () => {
         break;
       }
     }
+  }
+
+  const handleTotalDoughChange = (value: string) => {
+    state.totalDough.value = Number(value);
+    update("totalDough", state.totalDough);
+    let totalDivident = 0;
+    for (let key of IndrigentKeys) {
+      const k = key as keyof CalculaterState;
+      const ingridient = state[k] as Ingridient;
+      totalDivident += ingridient.divident;
+    }
+    const factor = state.totalDough.value / totalDivident;
+    for (let key of IndrigentKeys) {
+      const k = key as keyof CalculaterState;
+      const ingridient = state[k] as Ingridient;
+      state[k].value = Math.round(ingridient.divident * factor);
+      update(k, state[k]);
+    }
+    state.hydration.value = Math.round(calculateHydration(state, starterHydration));
+    update("hydration", state.hydration);
   }
 
   const handleStarterHydrationChange = (value: string) => {
@@ -210,14 +253,18 @@ const Calculator = () => {
         const k = key as keyof CalculaterState;
         if (k != field && !state[k].constant) {
           const ingridient = state[k] as Ingridient;
-          state[k].value = Math.round(ingridient.calculate(state, starterHydration));
-          update(k, state[k]);
+          const factor = ingridient.value / ingridient.divident;
+          ingridient.value = Math.round(ingridient.calculate(state, starterHydration));
+          ingridient.divident = ingridient.value / factor;
+          update(k, ingridient);
           break;
         }
       }
     }
     state.hydration.value = Math.round(calculateHydration(state, starterHydration));
     update("hydration", state.hydration);
+    state.totalDough.value = Math.round(calculateTotalDough(state));
+    update("totalDough", state.totalDough);
   };
 
   return (
@@ -237,15 +284,27 @@ const Calculator = () => {
               <span className="input-group-text" id="basic-addon1">%</span>
             </div>
           </div>
-          <div className="col-auto">
-
-          </div>
         </div>
 
         <NumberField label='Mehl' name='flour' state={state.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
         <NumberField label='Wasser' name='water' state={state.water} onChange={handleChange} onChecked={() => toggle("water")} />
         <NumberField label='Starter' name='starter' state={state.starter} onChange={handleChange} onChecked={() => toggle("starter")} />
         <NumberField label='Hydration' name='hydration' state={state.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
+        {/* Feld: totalDough */}
+        <div className="row mb-3 align-items-center">
+          <div className="col-auto">
+            <label htmlFor="totalDough" className="col-form-label">
+              Total Teig Masse
+            </label>
+          </div>
+          <div className="col-auto">
+            <div className="input-group">
+              <input type="number" id="totalDough" className="form-control" value={state.totalDough.value} min={state.totalDough.min} max={state.totalDough.max}
+                onChange={(e) => handleTotalDoughChange(e.target.value)} disabled={disableTotal} />
+              <span className="input-group-text" id="basic-addon1">g</span>
+            </div>
+          </div>
+        </div>
       </form>
 
     </>
