@@ -26,7 +26,8 @@ export function NumberField({ label, state, name, onChange, onChecked }: NumberF
               <input type="checkbox" className="form-check-input" checked={state.constant} onChange={onChecked} disabled={state.diseableConst} />
             </span>
           </div>
-          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)} min={state.min} max={state.max} />
+          <input type="number" id={"numberInput-".concat(name)} className="form-control" value={state.value} onChange={(e) => onChange(name, e.target.value)}
+           min={state.min} max={state.max} disabled={state.diseableNumber}/>
           <span className="input-group-text" id="basic-addon1">{state.unit}</span>
         </div>
       </div>
@@ -38,15 +39,17 @@ class NumberFieldState {
   value: number;
   constant: boolean;
   diseableConst: boolean;
+  diseableNumber: boolean;
   unit: string;
   min: number;
   max: number;
-  constructor(value: number, min: number, max: number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
+  constructor(value: number, min: number, max: number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false, diseableNumber: boolean = false) {
     this.value = value;
     this.constant = constant;
     this.min = min;
     this.max = max;
     this.diseableConst = diseableConst;
+    this.diseableNumber = diseableNumber;
     this.unit = unit;
   }
   toggle(): void {
@@ -57,8 +60,8 @@ class NumberFieldState {
 class Ingridient extends NumberFieldState {
   divident: number;
   calculate: (state: CalculaterState, starterHydration: number) => number;
-  constructor(value: number, min: number, max: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false) {
-    super(value, min, max, unit, constant, diseableConst);
+  constructor(value: number, min: number, max: number, divident: number, calculate: (state: CalculaterState, starterHydration: number) => number, unit: string = "g", constant: boolean = false, diseableConst: boolean = false, diseableNumber: boolean = false) {
+    super(value, min, max, unit, constant, diseableConst, diseableNumber);
     this.divident = divident;
     this.calculate = calculate;
   }
@@ -122,7 +125,7 @@ const Calculator = () => {
 
   let [counter, setCounter] = useState<number>(0);
   let [starterHydration, setStarterHydration] = useState<number>(100);
-  let [disableTotal, setDisableTotal] = useState<boolean>(false);
+  let [disableStarterHyd, setdisableStarterHyd] = useState<boolean>(false);
 
 
 
@@ -133,6 +136,7 @@ const Calculator = () => {
         for (let key of CalcluaterKeys) {
           const k = key as keyof CalculaterState;
           state[k].diseableConst = false;
+          state[k].diseableNumber = false;
           update(k, state[k]);
         }
       }
@@ -143,6 +147,7 @@ const Calculator = () => {
           const k = key as keyof CalculaterState;
           if (!state[k].constant && k != field) {
             state[k].diseableConst = true;
+            state[k].diseableNumber = true;
             update(k, state[k]);
           }
         }
@@ -153,8 +158,8 @@ const Calculator = () => {
     update(field, state[field]);
     if (state[field] instanceof Ingridient) {
       if (state[field].constant) {
-        disableTotal = true;
-        setDisableTotal(disableTotal);
+        state["totalDough"].diseableNumber = true;
+        update("totalDough", state["totalDough"]);
       } else {
         let enableTotal = true;
         for (let key of IndrigentKeys) {
@@ -162,10 +167,17 @@ const Calculator = () => {
           if (state[k].constant) enableTotal = false;          
         }
         if (enableTotal) {
-          disableTotal = false,
-          setDisableTotal(disableTotal);
+          state["totalDough"].diseableNumber = false;
+          update("totalDough", state["totalDough"]);
         }        
       }
+    } else if (field == "hydration") {
+      if (state[field].constant) {
+        disableStarterHyd = true;
+      } else {
+        disableStarterHyd = false;
+      }
+      setdisableStarterHyd(disableStarterHyd);
     }
   };
 
@@ -222,13 +234,16 @@ const Calculator = () => {
         update.calculate,
         update.unit,
         update.constant,
-        update.diseableConst
+        update.diseableConst,
+        update.diseableNumber
       ) : new NumberFieldState(update.value,
         update.min,
         update.max,
         update.unit,
         update.constant,
-        update.diseableConst)
+        update.diseableConst,
+        update.diseableNumber
+      )
     }));
   };
 
@@ -280,7 +295,7 @@ const Calculator = () => {
           <div className="col-auto">
             <div className="input-group">
               <input type="number" id="starterHydration" className="form-control" value={starterHydration} min="0" max="100"
-                onChange={(e) => handleStarterHydrationChange(e.target.value)} />
+                onChange={(e) => handleStarterHydrationChange(e.target.value)} disabled={disableStarterHyd} />
               <span className="input-group-text" id="basic-addon1">%</span>
             </div>
           </div>
@@ -300,7 +315,7 @@ const Calculator = () => {
           <div className="col-auto">
             <div className="input-group">
               <input type="number" id="totalDough" className="form-control" value={state.totalDough.value} min={state.totalDough.min} max={state.totalDough.max}
-                onChange={(e) => handleTotalDoughChange(e.target.value)} disabled={disableTotal} />
+                onChange={(e) => handleTotalDoughChange(e.target.value)} disabled={state.totalDough.diseableNumber} />
               <span className="input-group-text" id="basic-addon1">g</span>
             </div>
           </div>
