@@ -112,20 +112,28 @@ const Calculator = () => {
     return ((H * state.flour.value) - state.water.value) / (cWater - (H * cFlour));
   }
 
-
-
-  const [state, setState] = React.useState<CalculaterState>({
+  const initialCalculatorState : CalculaterState = {
     flour: new Ingridient(1000, 0, 50000, 100, calculateFlour),
     water: new Ingridient(670, 0, 50000, 67, calculateWater),
     starter: new Ingridient(250, 0, 50000, 25, calculateStarter),
     hydration: new NumberFieldState(71, 0, 100, "%"),
     totalDough: new NumberFieldState(1920, 0, 100000, "g")
-  });
+  }
+
+  const [state, setState] = React.useState<CalculaterState>(initialCalculatorState);
 
 
   let [counter, setCounter] = useState<number>(0);
   let [starterHydration, setStarterHydration] = useState<number>(100);
   let [disableStarterHyd, setdisableStarterHyd] = useState<boolean>(false);
+
+  const reset = () => {
+    setState(initialCalculatorState);
+    setCounter(0);
+    setStarterHydration(100);
+    setdisableStarterHyd(false);
+  };
+
 
 
 
@@ -339,6 +347,7 @@ const Calculator = () => {
             </div>
           </div>
         </div>
+        <button className='btn btn-primary' onClick={reset}>Reset</button>
       </form>
 
     </>
