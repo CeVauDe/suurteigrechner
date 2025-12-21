@@ -304,6 +304,20 @@ const Calculator = () => {
         <NumberField label='Mehl' name='flour' state={state.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
         <NumberField label='Wasser' name='water' state={state.water} onChange={handleChange} onChecked={() => toggle("water")} />
         <NumberField label='Starter' name='starter' state={state.starter} onChange={handleChange} onChecked={() => toggle("starter")} />
+          {/* Feld: salt */}
+        <div className="row mb-3 align-items-center">
+          <div className="col-auto">
+            <label htmlFor="salt" className="col-form-label">
+              Salz
+            </label>
+          </div>
+          <div className="col-auto">
+            <div className="input-group">
+              <input type="number" id="salt" className="form-control" value={Math.round(state.flour.value * 0.02)}  disabled />
+              <span className="input-group-text" id="basic-addon1">g</span>
+            </div>
+          </div>
+        </div>
         <NumberField label='Hydration' name='hydration' state={state.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
         {/* Feld: totalDough */}
         <div className="row mb-3 align-items-center">
