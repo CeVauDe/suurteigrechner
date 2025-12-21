@@ -188,9 +188,11 @@ const Calculator = () => {
       const k = key as keyof CalculaterState;
       const ingridient = state[k] as Ingridient;
       if (!ingridient.constant) {
-        state[k].value = Math.round(ingridient.calculate(state, starterHydration));
-        update(k, state[k]);
-        break;
+          const factor = ingridient.value / ingridient.divident;
+          ingridient.value = Math.round(ingridient.calculate(state, starterHydration));
+          ingridient.divident = ingridient.value / factor;
+          update(k, ingridient);
+          break;
       }
     }
     state.totalDough.value = Math.round(calculateTotalDough(state));
