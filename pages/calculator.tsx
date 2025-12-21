@@ -85,7 +85,7 @@ const Calculator = () => {
   }
 
   const calculateTotalDough = (state: CalculaterState) => {
-    return state.flour.value + state.water.value + state.starter.value;
+    return state.flour.value * 1.02 + state.water.value + state.starter.value;
   }
 
   const calculateFlour = (state: CalculaterState, starterHydration: number) => {
@@ -193,12 +193,15 @@ const Calculator = () => {
         break;
       }
     }
+    state.totalDough.value = Math.round(calculateTotalDough(state));
+    update("totalDough", state.totalDough);
+
   }
 
   const handleTotalDoughChange = (value: string) => {
     state.totalDough.value = Number(value);
     update("totalDough", state.totalDough);
-    let totalDivident = 0;
+    let totalDivident = 2; // salt
     for (let key of IndrigentKeys) {
       const k = key as keyof CalculaterState;
       const ingridient = state[k] as Ingridient;
