@@ -23,12 +23,13 @@ export default function NumberField({ label, state, name, value, onChange, onChe
 
   return (
     <div className="row mb-3 align-items-center">
-      <div className="col-auto">
+      <div className="col-12 col-md-4 text-md-start">
         <label htmlFor={id} className="col-form-label">
           {label}
         </label>
       </div>
-      <div className="col-auto">
+
+      <div className="col-12 col-md-8">
         <div className="input-group">
           {checkboxVisible && (
             <div className='input-group-text'>
@@ -37,7 +38,7 @@ export default function NumberField({ label, state, name, value, onChange, onChe
               </span>
             </div>
           )}
-          <input type="number" id={id} className="form-control" value={currentValue} onChange={(e) => onChange && onChange(name, e.target.value)} min={state ? state.min : undefined} max={state ? state.max : undefined} disabled={numberDisabled} />
+          <input type="number" id={id} className="form-control text-end" value={currentValue} onChange={(e) => onChange && onChange(name, e.target.value)} min={state ? state.min : undefined} max={state ? state.max : undefined} disabled={numberDisabled} />
           <span className="input-group-text">{currentUnit}</span>
         </div>
       </div>
