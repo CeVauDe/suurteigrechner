@@ -3,8 +3,8 @@ import { NumberFieldState } from '../lib/types';
 
 export type NumberFieldProps = {
   label: string;
-  name?: string;
-  state?: NumberFieldState; // if provided, component is state-driven (shows checkbox)
+  name: string;
+  state?: NumberFieldState; // if provided, component is state-driven 
   value?: number; // for simple read-only or computed values (e.g., salt)
   onChange?: (name: string | undefined, value: string) => void;
   onChecked?: () => void;
@@ -13,11 +13,10 @@ export type NumberFieldProps = {
 }
 
 export default function NumberField({ label, state, name, value, onChange, onChecked, showCheckbox, disabled }: NumberFieldProps) {
-  const id = `numberInput-${name ?? Math.random().toString(36).slice(2, 8)}`;
+  const id = `numberInput-${name}`;
   const currentValue = state ? state.value : (value ?? 0);
   const currentUnit = state ? state.unit : 'g';
-  // explicit `disabled` prop overrides derived state; otherwise use state.disableNumber or absence of onChange
-  const numberDisabled = disabled ?? (state ? state.disableNumber : (!onChange));
+  const numberDisabled =  disabled || (state ? state.disableNumber : false);
   const checkboxVisible = showCheckbox === undefined ? !!state : showCheckbox;
   const checkboxDisabled = state ? state.disableConst : true;
   const checkboxChecked = state ? state.constant : false;

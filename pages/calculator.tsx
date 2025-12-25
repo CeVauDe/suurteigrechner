@@ -87,11 +87,11 @@ const Calculator = () => {
   return (
     <>
       <form>
-        <NumberField label='Hydration Starter' name='starterHydration' state={fields.starterHydration} onChange={handleChange} showCheckbox={false} />
+        <NumberField label='Hydration Starter' name='starterHydration' state={fields.starterHydration} onChange={(_, v) => handleStarterHydrationChange(v)} showCheckbox={false} />
         <NumberField label='Mehl' name='flour' state={fields.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
         <NumberField label='Wasser' name='water' state={fields.water} onChange={handleChange} onChecked={() => toggle("water")} />
         <NumberField label='Starter' name='starter' state={fields.starter} onChange={handleChange} onChecked={() => toggle("starter")} />        
-        <NumberField label='Salz' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled/>        
+        <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled/>        
         <NumberField label='Hydration' name='hydration' state={fields.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
         <NumberField label='Total Teig Masse' name='totalDough' state={fields.totalDough} onChange={(n, v) => handleTotalDoughChange(v)} showCheckbox={false} />
         <button className='btn btn-primary' onClick={reset}>Reset</button>
