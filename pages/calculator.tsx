@@ -86,7 +86,7 @@ const Calculator = () => {
 
   return (
     <>
-      <form>
+      <form className='text-center'>
         <NumberField label='Hydration Starter' name='starterHydration' state={fields.starterHydration} onChange={(_, v) => handleStarterHydrationChange(v)} showCheckbox={false} />
         <NumberField label='Mehl' name='flour' state={fields.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
         <NumberField label='Wasser' name='water' state={fields.water} onChange={handleChange} onChecked={() => toggle("water")} />
