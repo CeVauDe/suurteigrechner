@@ -19,4 +19,6 @@ export type CalculaterState = {
   starter: Ingredient;
   hydration: NumberFieldState;
   totalDough: NumberFieldState;
+  starterHydration: NumberFieldState;
+  counter: number;
 }
