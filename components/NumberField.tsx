@@ -23,13 +23,13 @@ export default function NumberField({ label, state, name, value, onChange, onChe
 
   return (
     <div className="row mb-3 align-items-center">
-      <div className="col-12 col-md-4 text-md-start">
+      <div className="col-4 text-start">
         <label htmlFor={id} className="col-form-label">
           {label}
         </label>
       </div>
 
-      <div className="col-12 col-md-8">
+      <div className="col">
         <div className="input-group">
           {checkboxVisible && (
             <div className='input-group-text'>
