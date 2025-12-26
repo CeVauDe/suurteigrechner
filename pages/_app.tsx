@@ -2,7 +2,7 @@ import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useServiceWorkerUpdate } from '../lib/useServiceWorkerUpdate'
-import '../styles/globals.css'
+import '../styles/globals.scss'
 import Nav from '../components/Nav'
 
 export default function App({ Component, pageProps }: AppProps) {

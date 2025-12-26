@@ -1,0 +1,132 @@
+@use "sass:color";
+// Bootstrap variable overrides (warm theme)
+$primary: #c2410c !default; // terracotta
+$secondary: #7a4a1b !default; // warm brown
+$success: #15703a !default;
+$info: #0ea5a4 !default;
+$warning: #f59e0b !default;
+$danger: #b91c1c !default;
+$light: #fff7ed !default;
+$dark: #3f2a12 !default;
+
+$primary-hover: color.adjust($primary, $lightness: -8%);
+$primary-active: color.adjust($primary, $lightness: -14%);
+$secondary-hover: color.adjust($secondary, $lightness: -8%);
+$secondary-active: color.adjust($secondary, $lightness: -14%);
+
+$input-bg: color.adjust($secondary, $lightness: 60%);
+$disabled-bg: color.adjust($dark, $lightness: 60%);
+$form-border: rgba($dark, 0.06);
+
+@use "bootstrap" with (
+    $primary: $primary,
+    $secondary: $secondary,
+    $success: $success,
+    $info: $info,
+    $warning: $warning,
+    $danger: $danger,
+    $light: $light,
+    $dark: $dark
+);
+
+
+/* Body color */
+body {
+    background-color: $light;
+    color: $dark;
+}
+
+.navbar {
+    background-color: $input-bg;
+}
+
+/* Keep some existing customized form-check styles */
+.form-check-input[type="checkbox"] {
+    border-radius: 50px;
+    background-color: $light;
+}
+
+.form-check-input:checked {
+    background-image: none;
+    border-color: $light;
+}
+
+.form-check-input:disabled {
+    background-color: $disabled-bg;
+}
+
+.form-check-input:checked::after {
+    content: "C";
+    border-radius: 50px;
+    color: $primary;
+    display: block;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.2;
+    background-color: $light;
+    border-color: $light;
+}
+
+/* Button flavor overrides (use SASS vars compiled into CSS) */
+.btn-primary {
+    background-color: $primary !important;
+    border-color: $primary !important;
+    color: $light !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: $primary-hover !important;
+    border-color: $primary-hover !important;
+}
+
+.btn-primary:active {
+    background-color: $primary-active !important;
+    border-color: $primary-active !important;
+}
+
+.btn-secondary {
+    background-color: $secondary !important;
+    border-color: $secondary !important;
+    color: $light !important;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+    background-color: $secondary-hover !important;
+    border-color: $secondary-hover !important;
+}
+
+.form-control:focus {
+    border-color: $primary;
+}  
+
+/* Input backgrounds and form element theming */
+
+
+.form-control {
+    background-color: $input-bg;
+    border-color: $form-border;
+    color: $dark;
+}
+
+.form-control::placeholder { color: rgba($dark, 0.45); }
+
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: $disabled-bg;
+    opacity: 1; /* keep legible */
+}
+
+.input-group-text {
+    background-color: color.adjust($input-bg, $lightness: 3%);
+    border-color: $form-border;
+    color: $dark;
+}
+
+.form-select {
+    background-color: $input-bg;
+    border-color: $form-border;
+    color: $dark;
+}

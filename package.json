@@ -25,6 +25,7 @@
     "@types/react": "^19.0.0",
     "autoprefixer": "latest",
     "postcss": "latest",
+    "sass": "^1.97.1",
     "typescript": "^5.0.0"
   }
 }
