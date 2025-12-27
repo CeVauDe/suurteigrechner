@@ -5,7 +5,7 @@ export type NumberFieldState = {
   disableNumber: boolean;
   unit: string;
   min: number;
-  max: number;
+  max?: number;
 }
 
 export type Ingredient = NumberFieldState & {

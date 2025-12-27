@@ -10,11 +10,11 @@ import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrati
 const Calculator = () => {
 
   const initialCalculatorState : CalculaterState = {
-    flour: { value: 1000, min: 0, max: 50000, divident: 100, calculate: calculateFlour, unit: 'g', constant: false, disableConst: false, disableNumber: false },
-    water: { value: 670, min: 0, max: 50000, divident: 67, calculate: calculateWater, unit: 'g', constant: false, disableConst: false, disableNumber: false },
-    starter: { value: 250, min: 0, max: 50000, divident: 25, calculate: calculateStarter, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    flour: { value: 1000, min: 0, divident: 100, calculate: calculateFlour, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    water: { value: 670, min: 0, divident: 67, calculate: calculateWater, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    starter: { value: 250, min: 0, divident: 25, calculate: calculateStarter, unit: 'g', constant: false, disableConst: false, disableNumber: false },
     hydration: { value: 71, min: 0, max: 100, unit: '%', constant: false, disableConst: false, disableNumber: false },
-    totalDough: { value: 1920, min: 0, max: 100000, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    totalDough: { value: 1920, min: 0, unit: 'g', constant: false, disableConst: false, disableNumber: false },
     starterHydration: { value: 100, min: 0, max: 100, unit: '%', constant: false, disableConst: false, disableNumber: false },
     counter: 0    
   }
@@ -63,25 +63,21 @@ const Calculator = () => {
     dispatch({ type: 'TOGGLE_CONST', field });
   };
 
-  const handleHydrationChange = (field: string | undefined, value: string) => {
-    const newValue = Number(value);
-    dispatch({ type: 'SET_HYDRATION', value: newValue });
+  const handleHydrationChange = (field: string, value: number) => {
+    dispatch({ type: 'SET_HYDRATION', value: value });
   }
 
-  const handleTotalDoughChange = (value: string) => {
-    const newTotal = Number(value);
-    dispatch({ type: 'SET_TOTAL_DOUGH', value: newTotal });
+  const handleTotalDoughChange = (value: number) => {
+    dispatch({ type: 'SET_TOTAL_DOUGH', value: value });
   }
 
-  const handleStarterHydrationChange = (value: string) => {
-    const newStarterHydration = Number(value);
-    dispatch({ type: 'SET_STARTER_HYDRATION', value: newStarterHydration });
+  const handleStarterHydrationChange = (value: number) => {
+    dispatch({ type: 'SET_STARTER_HYDRATION', value: value });
   }
 
-  const handleChange = (field: string | undefined, value: string) => {
+  const handleChange = (field: string, value: number) => {
     const fieldKey = (field as keyof CalculaterState);
-    const newValue = Number(value);
-    dispatch({ type: 'SET_FIELD_VALUE', field: fieldKey, value: newValue });
+    dispatch({ type: 'SET_FIELD_VALUE', field: fieldKey, value: value });
   };
 
   return (
