@@ -14,7 +14,7 @@ $primary-active: color.adjust($primary, $lightness: -14%);
 $secondary-hover: color.adjust($secondary, $lightness: -8%);
 $secondary-active: color.adjust($secondary, $lightness: -14%);
 
-$input-bg: color.adjust($secondary, $lightness: 60%);
+$light-brown: color.adjust($secondary, $lightness: 60%);
 $disabled-bg: color.adjust($dark, $lightness: 60%);
 $form-border: rgba($dark, 0.06);
 
@@ -37,7 +37,22 @@ body {
 }
 
 .navbar {
-    background-color: $input-bg;
+    background-color: $light-brown;
+}
+
+.navbar-collapse {
+    .nav-link {
+        color: $light !important;
+        border-color: $dark;
+        border: 2px solid $dark;
+        background-color: $primary;
+    }
+
+}
+
+
+.card-body {
+    background-color: $light-brown;
 }
 
 /* Keep some existing customized form-check styles */
@@ -106,7 +121,7 @@ body {
 
 
 .form-control {
-    background-color: $input-bg;
+    background-color: $light;
     border-color: $form-border;
     color: $dark;
 }
@@ -116,17 +131,17 @@ body {
 .form-control:disabled,
 .form-control[readonly] {
     background-color: $disabled-bg;
-    opacity: 1; /* keep legible */
+    opacity: 1; 
 }
 
 .input-group-text {
-    background-color: color.adjust($input-bg, $lightness: 3%);
+    background-color: $disabled-bg;
     border-color: $form-border;
     color: $dark;
 }
 
 .form-select {
-    background-color: $input-bg;
+    background-color: $light;
     border-color: $form-border;
     color: $dark;
 }

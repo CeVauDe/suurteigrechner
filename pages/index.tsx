@@ -12,7 +12,7 @@ export default function Home() {
       </Head>
 
       <h1 className="text-6xl font-bold mb-6 text-center">Suurteigrechner</h1>
-      <p className="text-slate-400 mb-8 text-center">Alles was du brauchst für das perfekte Sauerteigbrot.</p>
+      <p className="text-slate-400 mb-8 text-center">Din Rechner fürs perfeckte Suurteigbrot.</p>
 
       {/* Calculator on home */}
       <div className="container">

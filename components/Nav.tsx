@@ -41,7 +41,7 @@ export default function Nav() {
                         <span className="navbar-toggler-icon"></span>
                     </button>
                     <div className="collapse navbar-collapse" id="navbarTogglerDemo02" ref={menuRef}>
-                        <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+                        <ul className="navbar-nav me-auto mb-2 mb-lg-0 text-center text-lg-start">
                             {links.map(l => (
                                 <li key={l.href} className="nav-item">
                                     <Link href={l.href} className={`nav-link ${router.pathname === l.href ? 'active' : ''}`}>

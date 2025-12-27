@@ -90,7 +90,8 @@ export default function Guestbook() {
                   {error}
                 </div>
               )}
-              <div className="text-center text-slate-500 text-lg">
+              <div className='row mb-3'>
+              <div className="input-group justify-content-center">
                 <input
                   type="text"
                   maxLength={280}
@@ -103,11 +104,11 @@ export default function Guestbook() {
                 <button
                   type="submit"
                   disabled={loading || text.trim().length === 0 || !isOnline}
-                  className="flex-shrink-0 bg-sky-500 hover:bg-sky-600 font-medium rounded-full px-5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  className=" btn btn-primary"
                 >
                   {!isOnline ? 'Offline' : loading ? 'Sending...' : 'Send'}
                 </button>
-              </div>
+              </div></div>
             </form>
           </div>
 
