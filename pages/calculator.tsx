@@ -4,82 +4,55 @@
 import React from 'react';
 import { calculateFlour, calculateWater, calculateStarter } from '../lib/calc';
 import NumberField from '../components/NumberField';
-import type { NumberFieldState, Ingredient, CalculaterState } from '../lib/types';
+import type { CalculaterState } from '../lib/types';
 import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrationCase, setFieldValueCase } from '../lib/reducerHelpers';
 
 const Calculator = () => {
-  // calculation functions moved to `lib/calc.ts`
 
-  const initialCalculatorState : CalculaterState = {
-    flour: { value: 1000, min: 0, max: 50000, divident: 100, calculate: calculateFlour, unit: 'g', constant: false, disableConst: false, disableNumber: false },
-    water: { value: 670, min: 0, max: 50000, divident: 67, calculate: calculateWater, unit: 'g', constant: false, disableConst: false, disableNumber: false },
-    starter: { value: 250, min: 0, max: 50000, divident: 25, calculate: calculateStarter, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+  const initialCalculatorState: CalculaterState = {
+    flour: { value: 1000, min: 0, divident: 100, calculate: calculateFlour, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    water: { value: 670, min: 0, divident: 67, calculate: calculateWater, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    starter: { value: 250, min: 0, divident: 25, calculate: calculateStarter, unit: 'g', constant: false, disableConst: false, disableNumber: false },
     hydration: { value: 71, min: 0, max: 100, unit: '%', constant: false, disableConst: false, disableNumber: false },
-    totalDough: { value: 1920, min: 0, max: 100000, unit: 'g', constant: false, disableConst: false, disableNumber: false }
-  }
-
-  type ReducerState = {
-    fields: CalculaterState;
-    counter: number;
-    starterHydration: number;
-    disableStarterHyd: boolean;
+    totalDough: { value: 1940, min: 0, unit: 'g', constant: false, disableConst: false, disableNumber: false },
+    starterHydration: { value: 100, min: 0, max: 100, unit: '%', constant: false, disableConst: false, disableNumber: false },
+    counter: 0
   }
 
   type Action =
     | { type: 'RESET' }
-    | { type: 'SET_FIELD', field: keyof CalculaterState, value: NumberFieldState | Ingredient }
     | { type: 'TOGGLE_CONST', field: keyof CalculaterState }
     | { type: 'SET_HYDRATION', value: number }
     | { type: 'SET_TOTAL_DOUGH', value: number }
     | { type: 'SET_STARTER_HYDRATION', value: number }
     | { type: 'SET_FIELD_VALUE', field: keyof CalculaterState, value: number }
 
-  const initialReducerState: ReducerState = {
-    fields: initialCalculatorState,
-    counter: 0,
-    starterHydration: 100,
-    disableStarterHyd: false
-  }
-
-  
-
-  const reducer = (state: ReducerState, action: Action): ReducerState => {
-    const fields = state.fields;
+  const reducer = (state: CalculaterState, action: Action): CalculaterState => {
     switch (action.type) {
       case 'RESET':
-        return initialReducerState;
-      case 'SET_FIELD': {
-        return { ...state, fields: { ...fields, [action.field]: { ...(action.value as any) } } };
-      }
+        return initialCalculatorState;
       case 'TOGGLE_CONST': {
-        const { nextFields, nextCounter, disableStarterHyd } = toggleConstCase(fields, action.field, state.counter);
-        const nextState = { ...state, fields: nextFields, counter: nextCounter } as ReducerState;
-        if (disableStarterHyd !== undefined) nextState.disableStarterHyd = disableStarterHyd;
-        return nextState;
+        const nextFields = toggleConstCase(state, action.field);
+        return nextFields;
       }
       case 'SET_HYDRATION': {
-        const nextFields = setHydrationCase(fields, action.value, state.starterHydration);
-        return { ...state, fields: nextFields };
+        return setHydrationCase(state, action.value);
       }
       case 'SET_TOTAL_DOUGH': {
-        const nextFields = setTotalDoughCase(fields, action.value, state.starterHydration);
-        return { ...state, fields: nextFields };
+        return setTotalDoughCase(state, action.value);
       }
       case 'SET_STARTER_HYDRATION': {
-        const nextFields = setStarterHydrationCase(fields, action.value);
-        return { ...state, starterHydration: action.value, fields: nextFields };
+        return setStarterHydrationCase(state, action.value);
       }
       case 'SET_FIELD_VALUE': {
-        const nextFields = setFieldValueCase(fields, action.field, action.value, state.counter, state.starterHydration);
-        return { ...state, fields: nextFields };
+        return setFieldValueCase(state, action.field, action.value);
       }
       default:
         return state;
     }
   }
 
-  const [reducerState, dispatch] = React.useReducer(reducer, initialReducerState);
-  const { fields, counter, starterHydration, disableStarterHyd } = reducerState;
+  const [fields, dispatch] = React.useReducer(reducer, initialCalculatorState);
 
   const reset = () => dispatch({ type: 'RESET' });
 
@@ -90,80 +63,54 @@ const Calculator = () => {
     dispatch({ type: 'TOGGLE_CONST', field });
   };
 
-  const handleHydrationChange = (field: string, value: string) => {
-    const newValue = Number(value);
-    dispatch({ type: 'SET_HYDRATION', value: newValue });
+  const handleHydrationChange = (field: string, value: number) => {
+    dispatch({ type: 'SET_HYDRATION', value: value });
   }
 
-  const handleTotalDoughChange = (value: string) => {
-    const newTotal = Number(value);
-    dispatch({ type: 'SET_TOTAL_DOUGH', value: newTotal });
+  const handleTotalDoughChange = (value: number) => {
+    dispatch({ type: 'SET_TOTAL_DOUGH', value: value });
   }
 
-  const handleStarterHydrationChange = (value: string) => {
-    const newStarterHydration = Number(value);
-    dispatch({ type: 'SET_STARTER_HYDRATION', value: newStarterHydration });
+  const handleStarterHydrationChange = (value: number) => {
+    dispatch({ type: 'SET_STARTER_HYDRATION', value: value });
   }
 
-  const handleChange = (field: string, value: string) => {
-    const fieldKey = field as keyof CalculaterState;
-    const newValue = Number(value);
-    dispatch({ type: 'SET_FIELD_VALUE', field: fieldKey, value: newValue });
+  const handleChange = (field: string, value: number) => {
+    const fieldKey = (field as keyof CalculaterState);
+    dispatch({ type: 'SET_FIELD_VALUE', field: fieldKey, value: value });
   };
 
   return (
     <>
-      <form>
-        {/* Feld 1: Hydration Starter */}
-        <div className="row mb-3 align-items-center">
-          <div className="col-auto">
-            <label htmlFor="starterHydration" className="col-form-label">
-              Hydration Starter:
-            </label>
+      <form className='text-center'>
+        <div className="card mb-3">
+          <div className="card-header btn-primary">
+            Was du hesch
           </div>
-          <div className="col-auto">
-            <div className="input-group">
-              <input type="number" id="starterHydration" className="form-control" value={starterHydration} min="0" max="100"
-                onChange={(e) => handleStarterHydrationChange(e.target.value)} disabled={disableStarterHyd} />
-              <span className="input-group-text" id="basic-addon1">%</span>
-            </div>
+          <div className="card-body">
+            <NumberField label='Hydrationstarter' name='starterHydration' state={fields.starterHydration} onChange={(_, v) => handleStarterHydrationChange(v)} showCheckbox={false} />
           </div>
         </div>
-
-        <NumberField label='Mehl' name='flour' state={fields.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
-        <NumberField label='Wasser' name='water' state={fields.water} onChange={handleChange} onChecked={() => toggle("water")} />
-        <NumberField label='Starter' name='starter' state={fields.starter} onChange={handleChange} onChecked={() => toggle("starter")} />
-          {/* Feld: salt */}
-        <div className="row mb-3 align-items-center">
-          <div className="col-auto">
-            <label htmlFor="salt" className="col-form-label">
-              Salz
-            </label>
+        <div className="card mb-3">
+          <div className="card-header btn-primary">
+            Was du willsch
           </div>
-          <div className="col-auto">
-            <div className="input-group">
-              <input type="number" id="salt" className="form-control" value={Math.round(fields.flour.value * 0.02)}  disabled />
-              <span className="input-group-text" id="basic-addon1">g</span>
-            </div>
+          <div className="card-body">
+            <NumberField label='Hydration' name='hydration' state={fields.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
+            <NumberField label='Total Teigmasse' name='totalDough' state={fields.totalDough} onChange={(n, v) => handleTotalDoughChange(v)} showCheckbox={false} />
+          </div></div>
+        <div className="card mb-3">
+          <div className="card-header btn-primary">
+            Was du bruchsch
           </div>
-        </div>
-        <NumberField label='Hydration' name='hydration' state={fields.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
-        {/* Feld: totalDough */}
-        <div className="row mb-3 align-items-center">
-          <div className="col-auto">
-            <label htmlFor="totalDough" className="col-form-label">
-              Total Teig Masse
-            </label>
-          </div>
-          <div className="col-auto">
-            <div className="input-group">
-              <input type="number" id="totalDough" className="form-control" value={fields.totalDough.value} min={fields.totalDough.min} max={fields.totalDough.max}
-                onChange={(e) => handleTotalDoughChange(e.target.value)} disabled={fields.totalDough.disableNumber} />
-              <span className="input-group-text" id="basic-addon1">g</span>
-            </div>
+          <div className="card-body">
+            <NumberField label='Mehl' name='flour' state={fields.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
+            <NumberField label='Wasser' name='water' state={fields.water} onChange={handleChange} onChecked={() => toggle("water")} />
+            <NumberField label='Starter' name='starter' state={fields.starter} onChange={handleChange} onChecked={() => toggle("starter")} />
+            <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled />
           </div>
         </div>
-        <button className='btn btn-primary' onClick={reset}>Reset</button>
+        <button className='btn btn-primary' onClick={reset}>zrüggsetze</button>
       </form>
 
     </>

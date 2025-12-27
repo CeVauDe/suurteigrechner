@@ -20,6 +20,9 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
+  sassOptions: {
+    quietDeps: true,
+  },
   turbopack: {}
 }
 

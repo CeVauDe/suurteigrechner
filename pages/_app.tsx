@@ -2,7 +2,8 @@ import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useServiceWorkerUpdate } from '../lib/useServiceWorkerUpdate'
-import '../styles/globals.css'
+import '../styles/globals.scss'
+import Nav from '../components/Nav'
 
 export default function App({ Component, pageProps }: AppProps) {
   const { updateAvailable, handleUpdate } = useServiceWorkerUpdate()
@@ -17,6 +18,10 @@ export default function App({ Component, pageProps }: AppProps) {
         console.log('Service Worker registration failed:', err)
       })
     }
+    // Dynamically load Bootstrap JS bundle on the client
+    import('bootstrap/dist/js/bootstrap.bundle').catch(() => {
+      /* non-fatal if the import fails in some environments */
+    })
   }, [])
 
   return (
@@ -43,7 +48,10 @@ export default function App({ Component, pageProps }: AppProps) {
         </div>
       )}
 
-      <Component {...pageProps} />
+      <Nav />
+      <main className="pt-20">
+        <Component {...pageProps} />
+      </main>
     </>
   )
 }
