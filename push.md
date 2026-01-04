@@ -21,7 +21,7 @@ Allow users to set reminders in the Feeding Plan and receive browser push notifi
 - **Railway Setup**: Add these keys in the **Variables** tab of your service in the Railway dashboard.
 - **Testing & Validation**: Verify that `web-push` is in `package.json` and that VAPID keys are correctly loaded (e.g., by logging `process.env.VAPID_PUBLIC_KEY` on server start).
 
-### 2. Database Schema Update [IN PROGRESS]
+### 2. Database Schema Update [COMPLETED]
 Update `lib/db.ts` to include:
 - `push_subscriptions` table: `id`, `endpoint`, `p256dh`, `auth`, `created_at`.
 - `reminders` table: `id`, `subscription_id`, `scheduled_time`, `last_notified_at`. (Added `last_notified_at` to support the **Cooldown/Throttling** decision).
@@ -84,7 +84,7 @@ Update `public/sw.js` to handle:
 ## Next Steps
 - [x] Install `web-push` dependency.
 - [x] Generate VAPID keys and add to Railway/`.env.local`.
-- [ ] Create the database migration for subscriptions.
+- [x] Create the database migration for subscriptions.
 - [ ] Implement API routes for subscription management.
 - [ ] Update Service Worker for push events.
 - [ ] Build Feeding Plan UI and reminder logic.
