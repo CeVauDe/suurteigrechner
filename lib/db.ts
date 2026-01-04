@@ -39,10 +39,26 @@ function initDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         text TEXT NOT NULL CHECK(length(text) > 0 AND length(text) <= 280),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
+      );
+
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        endpoint TEXT UNIQUE NOT NULL,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS reminders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subscription_id INTEGER NOT NULL,
+        scheduled_time DATETIME NOT NULL,
+        last_notified_at DATETIME,
+        FOREIGN KEY (subscription_id) REFERENCES push_subscriptions(id) ON DELETE CASCADE
+      );
     `)
     
-    console.log('[DB] Table initialized')
+    console.log('[DB] Tables initialized')
   } catch (err) {
     console.error('[DB] Failed to open database:', err)
     throw err
@@ -55,6 +71,21 @@ export interface Entry {
   id: number
   text: string
   created_at: string
+}
+
+export interface PushSubscriptionRow {
+  id: number
+  endpoint: string
+  p256dh: string
+  auth: string
+  created_at: string
+}
+
+export interface ReminderRow {
+  id: number
+  subscription_id: number
+  scheduled_time: string
+  last_notified_at: string | null
 }
 
 export function getLatestEntries(limit = 10): Entry[] {
@@ -79,4 +110,58 @@ export function createEntry(text: string): Entry {
 
 export function getDb() {
   return initDb()
+}
+
+// Push Subscription Helpers
+export function saveSubscription(endpoint: string, p256dh: string, auth: string): number {
+  const database = initDb()
+  const stmt = database.prepare(`
+    INSERT INTO push_subscriptions (endpoint, p256dh, auth)
+    VALUES (?, ?, ?)
+    ON CONFLICT(endpoint) DO UPDATE SET
+      p256dh = excluded.p256dh,
+      auth = excluded.auth
+  `)
+  const info = stmt.run(endpoint, p256dh, auth)
+  
+  if (info.changes === 0) {
+    // If it was an update, we need to find the ID
+    const getStmt = database.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?')
+    const row = getStmt.get(endpoint) as { id: number }
+    return row.id
+  }
+  
+  return info.lastInsertRowid as number
+}
+
+export function deleteSubscription(endpoint: string) {
+  const database = initDb()
+  const stmt = database.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?')
+  stmt.run(endpoint)
+}
+
+// Reminder Helpers
+export function createReminder(subscriptionId: number, scheduledTime: string) {
+  const database = initDb()
+  const stmt = database.prepare('INSERT INTO reminders (subscription_id, scheduled_time) VALUES (?, ?)')
+  stmt.run(subscriptionId, scheduledTime)
+}
+
+export function getDueReminders() {
+  const database = initDb()
+  // Get reminders where scheduled_time is in the past AND (last_notified_at is null OR > 15 mins ago)
+  const stmt = database.prepare(`
+    SELECT r.*, s.endpoint, s.p256dh, s.auth
+    FROM reminders r
+    JOIN push_subscriptions s ON r.subscription_id = s.id
+    WHERE r.scheduled_time <= CURRENT_TIMESTAMP
+    AND (r.last_notified_at IS NULL OR r.last_notified_at <= datetime('now', '-15 minutes'))
+  `)
+  return stmt.all()
+}
+
+export function updateReminderNotified(id: number) {
+  const database = initDb()
+  const stmt = database.prepare('UPDATE reminders SET last_notified_at = CURRENT_TIMESTAMP WHERE id = ?')
+  stmt.run(id)
 }
