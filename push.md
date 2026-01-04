@@ -45,7 +45,7 @@ Update `public/sw.js` to handle:
 - Handle `Notification.requestPermission()` and subscription logic (strictly local to the browser as per **Browser-Only** decision).
 - **Testing & Validation**: Click the toggle and verify the browser permission prompt appears. After allowing, check the Network tab to ensure the subscription was sent to the API.
 
-### 6. Notification Dispatcher [IN PROGRESS]
+### 6. Notification Dispatcher [COMPLETED]
 - Implement a `setInterval` (e.g., every 5 minutes) in the server initialization logic (as per **Polling** decision).
 - The dispatcher will:
     1. Query `reminders` due for notification.
@@ -88,5 +88,5 @@ Update `public/sw.js` to handle:
 - [x] Implement API routes for subscription management.
 - [x] Update Service Worker for push events.
 - [x] Build Feeding Plan UI and reminder logic.
-- [ ] Setup background notification dispatcher.
+- [x] Setup background notification dispatcher.
 
