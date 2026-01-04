@@ -27,13 +27,13 @@ Update `lib/db.ts` to include:
 - `reminders` table: `id`, `subscription_id`, `scheduled_time`, `last_notified_at`. (Added `last_notified_at` to support the **Cooldown/Throttling** decision).
 - **Testing & Validation**: Verify the tables exist and have the correct columns using a SQLite browser or by running a `SELECT` query in a temporary API route.
 
-### 3. API Routes [NOT STARTED]
+### 3. API Routes [COMPLETED]
 - `POST /api/notifications/subscribe`: Save a new subscription.
 - `POST /api/notifications/unsubscribe`: Remove a subscription.
 - `POST /api/notifications/test`: (For development) Trigger a test notification.
 - **Testing & Validation**: Use `fetch` in the browser console to POST a mock subscription to `/api/notifications/subscribe` and verify the row is inserted in the database.
 
-### 4. Service Worker Enhancement [NOT STARTED]
+### 4. Service Worker Enhancement [IN PROGRESS]
 Update `public/sw.js` to handle:
 - `push` event: Show `self.registration.showNotification()` with static messages (as per **Static Messages** decision).
 - `notificationclick` event: Open the app or focus an existing tab.
@@ -85,7 +85,7 @@ Update `public/sw.js` to handle:
 - [x] Install `web-push` dependency.
 - [x] Generate VAPID keys and add to Railway/`.env.local`.
 - [x] Create the database migration for subscriptions.
-- [ ] Implement API routes for subscription management.
+- [x] Implement API routes for subscription management.
 - [ ] Update Service Worker for push events.
 - [ ] Build Feeding Plan UI and reminder logic.
 - [ ] Setup background notification dispatcher.
