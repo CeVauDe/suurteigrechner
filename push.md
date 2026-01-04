@@ -14,38 +14,38 @@ Allow users to set reminders in the Feeding Plan and receive browser push notifi
 
 ## Implementation Steps
 
-### 1. Infrastructure & Security
+### 1. Infrastructure & Security [COMPLETED]
 - Install `web-push` library: `npm install web-push`.
 - Generate VAPID (Voluntary Application Server Identification) keys: `npx web-push generate-vapid-keys`.
 - Store `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in environment variables.
 - **Railway Setup**: Add these keys in the **Variables** tab of your service in the Railway dashboard.
 - **Testing & Validation**: Verify that `web-push` is in `package.json` and that VAPID keys are correctly loaded (e.g., by logging `process.env.VAPID_PUBLIC_KEY` on server start).
 
-### 2. Database Schema Update
+### 2. Database Schema Update [IN PROGRESS]
 Update `lib/db.ts` to include:
 - `push_subscriptions` table: `id`, `endpoint`, `p256dh`, `auth`, `created_at`.
 - `reminders` table: `id`, `subscription_id`, `scheduled_time`, `last_notified_at`. (Added `last_notified_at` to support the **Cooldown/Throttling** decision).
 - **Testing & Validation**: Verify the tables exist and have the correct columns using a SQLite browser or by running a `SELECT` query in a temporary API route.
 
-### 3. API Routes
+### 3. API Routes [NOT STARTED]
 - `POST /api/notifications/subscribe`: Save a new subscription.
 - `POST /api/notifications/unsubscribe`: Remove a subscription.
 - `POST /api/notifications/test`: (For development) Trigger a test notification.
 - **Testing & Validation**: Use `fetch` in the browser console to POST a mock subscription to `/api/notifications/subscribe` and verify the row is inserted in the database.
 
-### 4. Service Worker Enhancement
+### 4. Service Worker Enhancement [NOT STARTED]
 Update `public/sw.js` to handle:
 - `push` event: Show `self.registration.showNotification()` with static messages (as per **Static Messages** decision).
 - `notificationclick` event: Open the app or focus an existing tab.
 - **Testing & Validation**: Use Chrome DevTools (Application > Service Workers) to trigger a mock "Push" event and verify the system notification appears.
 
-### 5. Feeding Plan UI & Logic
+### 5. Feeding Plan UI & Logic [NOT STARTED]
 - Implement the actual feeding plan calculator/scheduler in `pages/feedingplan.tsx`.
 - Add a "Remind Me" toggle that requests browser permissions.
 - Handle `Notification.requestPermission()` and subscription logic (strictly local to the browser as per **Browser-Only** decision).
 - **Testing & Validation**: Click the toggle and verify the browser permission prompt appears. After allowing, check the Network tab to ensure the subscription was sent to the API.
 
-### 6. Notification Dispatcher
+### 6. Notification Dispatcher [NOT STARTED]
 - Implement a `setInterval` (e.g., every 5 minutes) in the server initialization logic (as per **Polling** decision).
 - The dispatcher will:
     1. Query `reminders` due for notification.
@@ -82,7 +82,11 @@ Update `public/sw.js` to handle:
         - *Option A (No Limit)*: Trusting the user entirely (rejected to ensure better UX).
 
 ## Next Steps
-- [ ] Install `web-push` dependency.
-- [ ] Generate VAPID keys and add to Railway/`.env.local`.
+- [x] Install `web-push` dependency.
+- [x] Generate VAPID keys and add to Railway/`.env.local`.
 - [ ] Create the database migration for subscriptions.
+- [ ] Implement API routes for subscription management.
+- [ ] Update Service Worker for push events.
+- [ ] Build Feeding Plan UI and reminder logic.
+- [ ] Setup background notification dispatcher.
 
