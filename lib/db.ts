@@ -67,7 +67,7 @@ function startDispatcher() {
   if ((global as any).__dispatcherStarted) return
 
   console.log('[Dispatcher] Initializing notification dispatcher...')
-  const INTERVAL = 5 * 60 * 1000
+  const INTERVAL = 60 * 1000 // Run every minute
   setInterval(dispatchNotifications, INTERVAL)
   dispatchNotifications()
   ;(global as any).__dispatcherStarted = true
