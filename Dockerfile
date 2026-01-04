@@ -17,6 +17,10 @@ COPY . .
 # Next.js collects anonymous telemetry; disable it
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Pass VAPID public key as build argument so it's baked into the client bundle
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
 RUN npm run build
 
 # ---------- RUNNER ----------

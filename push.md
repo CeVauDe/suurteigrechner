@@ -39,13 +39,13 @@ Update `public/sw.js` to handle:
 - `notificationclick` event: Open the app or focus an existing tab.
 - **Testing & Validation**: Use Chrome DevTools (Application > Service Workers) to trigger a mock "Push" event and verify the system notification appears.
 
-### 5. Feeding Plan UI & Logic [IN PROGRESS]
+### 5. Feeding Plan UI & Logic [COMPLETED]
 - Implement the actual feeding plan calculator/scheduler in `pages/feedingplan.tsx`.
 - Add a "Remind Me" toggle that requests browser permissions.
 - Handle `Notification.requestPermission()` and subscription logic (strictly local to the browser as per **Browser-Only** decision).
 - **Testing & Validation**: Click the toggle and verify the browser permission prompt appears. After allowing, check the Network tab to ensure the subscription was sent to the API.
 
-### 6. Notification Dispatcher [NOT STARTED]
+### 6. Notification Dispatcher [IN PROGRESS]
 - Implement a `setInterval` (e.g., every 5 minutes) in the server initialization logic (as per **Polling** decision).
 - The dispatcher will:
     1. Query `reminders` due for notification.
@@ -87,6 +87,6 @@ Update `public/sw.js` to handle:
 - [x] Create the database migration for subscriptions.
 - [x] Implement API routes for subscription management.
 - [x] Update Service Worker for push events.
-- [ ] Build Feeding Plan UI and reminder logic.
+- [x] Build Feeding Plan UI and reminder logic.
 - [ ] Setup background notification dispatcher.
 
