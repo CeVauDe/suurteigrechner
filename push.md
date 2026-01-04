@@ -33,13 +33,13 @@ Update `lib/db.ts` to include:
 - `POST /api/notifications/test`: (For development) Trigger a test notification.
 - **Testing & Validation**: Use `fetch` in the browser console to POST a mock subscription to `/api/notifications/subscribe` and verify the row is inserted in the database.
 
-### 4. Service Worker Enhancement [IN PROGRESS]
+### 4. Service Worker Enhancement [COMPLETED]
 Update `public/sw.js` to handle:
 - `push` event: Show `self.registration.showNotification()` with static messages (as per **Static Messages** decision).
 - `notificationclick` event: Open the app or focus an existing tab.
 - **Testing & Validation**: Use Chrome DevTools (Application > Service Workers) to trigger a mock "Push" event and verify the system notification appears.
 
-### 5. Feeding Plan UI & Logic [NOT STARTED]
+### 5. Feeding Plan UI & Logic [IN PROGRESS]
 - Implement the actual feeding plan calculator/scheduler in `pages/feedingplan.tsx`.
 - Add a "Remind Me" toggle that requests browser permissions.
 - Handle `Notification.requestPermission()` and subscription logic (strictly local to the browser as per **Browser-Only** decision).
@@ -86,7 +86,7 @@ Update `public/sw.js` to handle:
 - [x] Generate VAPID keys and add to Railway/`.env.local`.
 - [x] Create the database migration for subscriptions.
 - [x] Implement API routes for subscription management.
-- [ ] Update Service Worker for push events.
+- [x] Update Service Worker for push events.
 - [ ] Build Feeding Plan UI and reminder logic.
 - [ ] Setup background notification dispatcher.
 
