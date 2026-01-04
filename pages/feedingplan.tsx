@@ -21,12 +21,16 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export default function FeedingPlan() {
-  const [hours, setHours] = useState(12)
+  const [reminderDateTime, setReminderDateTime] = useState('')
   const [status, setStatus] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    // Set default to 12 hours from now
+    const defaultTime = new Date(Date.now() + 12 * 60 * 60 * 1000)
+    setReminderDateTime(formatDateTimeLocal(defaultTime))
+    
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.ready.then((registration) => {
         registration.pushManager.getSubscription().then((subscription) => {
@@ -35,6 +39,16 @@ export default function FeedingPlan() {
       })
     }
   }, [])
+
+  // Format Date to datetime-local input format (YYYY-MM-DDTHH:mm)
+  function formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
 
   const subscribeUser = async () => {
     setLoading(true)
@@ -107,7 +121,18 @@ export default function FeedingPlan() {
         return
       }
 
-      const scheduledTime = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
+      const selectedDate = new Date(reminderDateTime)
+      if (isNaN(selectedDate.getTime())) {
+        setStatus('Please select a valid date and time.')
+        return
+      }
+
+      if (selectedDate <= new Date()) {
+        setStatus('Please select a time in the future.')
+        return
+      }
+
+      const scheduledTime = selectedDate.toISOString()
 
       const res = await fetch('/api/notifications/remind', {
         method: 'POST',
@@ -119,7 +144,8 @@ export default function FeedingPlan() {
       })
 
       if (res.ok) {
-        setStatus(`Reminder set for ${hours} hours from now!`)
+        const formattedTime = selectedDate.toLocaleString()
+        setStatus(`Reminder set for ${formattedTime}!`)
       } else {
         const data = await res.json()
         setStatus(`Error: ${data.message}`)
@@ -145,13 +171,12 @@ export default function FeedingPlan() {
                 <h1 className="h2 mb-4 text-center">Feeding Plan</h1>
                 
                 <div className="mb-4">
-                  <label className="form-label">Hours until next feeding</label>
+                  <label className="form-label">Remind me at</label>
                   <input 
-                    type="number" 
+                    type="datetime-local" 
                     className="form-control form-control-lg" 
-                    value={hours} 
-                    onChange={(e) => setHours(parseInt(e.target.value) || 0)}
-                    min="1"
+                    value={reminderDateTime} 
+                    onChange={(e) => setReminderDateTime(e.target.value)}
                   />
                 </div>
 
