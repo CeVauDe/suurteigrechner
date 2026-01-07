@@ -165,17 +165,17 @@ export default function FeedingPlan() {
   return (
     <>
       <Head>
-        <title>Feeding Plan - Suurteigrechner</title>
+        <title>Füetterigszitplan - Suurteigrechner</title>
       </Head>
       <div className="container py-5">
         <div className="row justify-content-center">
           <div className="col-md-8 col-lg-6">
             <div className="card shadow-sm">
               <div className="card-body p-4">
-                <h1 className="h2 mb-4 text-center">Feeding Plan</h1>
+                <h1 className="h2 mb-4 text-center">Füetterigszitplan</h1>
                 
                 <div className="mb-4">
-                  <label className="form-label">Remind me at</label>
+                  <label className="form-label">Erinner mich am</label>
                   <input 
                     type="datetime-local" 
                     className="form-control form-control-lg" 
@@ -185,7 +185,7 @@ export default function FeedingPlan() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label">Notification message</label>
+                  <label className="form-label">Nachricht</label>
                   {isCustomMessage ? (
                     <input 
                       type="text"
@@ -199,7 +199,7 @@ export default function FeedingPlan() {
                           setReminderMessage(DEFAULT_NOTIFICATION_MESSAGE)
                         }
                       }}
-                      placeholder="Type your custom message..."
+                      placeholder="Schriib dini eigeti Nachricht..."
                       maxLength={MAX_MESSAGE_LENGTH}
                       autoFocus
                     />
@@ -219,7 +219,7 @@ export default function FeedingPlan() {
                       {NOTIFICATION_MESSAGES.map((msg, index) => (
                         <option key={index} value={msg}>{msg}</option>
                       ))}
-                      <option value="__custom__">✏️ Custom message...</option>
+                      <option value="__custom__">✏️ Eigeti Nachricht...</option>
                     </select>
                   )}
                   {isCustomMessage && (
@@ -236,7 +236,7 @@ export default function FeedingPlan() {
                       onClick={subscribeUser}
                       disabled={loading}
                     >
-                      {loading ? 'Processing...' : 'Enable Notifications'}
+                      {loading ? 'Lade...' : 'Benachrichtigunge aktiviere'}
                     </button>
                   ) : (
                     <button 
@@ -244,7 +244,7 @@ export default function FeedingPlan() {
                       onClick={scheduleReminder}
                       disabled={loading}
                     >
-                      {loading ? 'Processing...' : 'Set Reminder'}
+                      {loading ? 'Lade...' : 'Erinnerig setze'}
                     </button>
                   )}
                 </div>
@@ -256,7 +256,7 @@ export default function FeedingPlan() {
                 )}
 
                 <div className="mt-5 text-center">
-                  <Link href="/" className="text-decoration-none">← Back to Calculator</Link>
+                  <Link href="/" className="text-decoration-none">← Zrugg zum Rechner</Link>
                 </div>
               </div>
             </div>

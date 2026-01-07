@@ -5,13 +5,13 @@
  */
 
 export const NOTIFICATION_MESSAGES = [
-  'Time to feed your starter! 🍞',
-  'Check your dough\'s rise! 🥖',
-  'Stretch and fold time! 🫳',
-  'Baking day reminder! 🔥',
-  'Preshape your loaves! 🫓',
-  'Time to shape your bread! 🥐',
-  'Check on your sourdough! 👀',
+  'Ziit zum Starter füettere! 🍞',
+  'Lueg mal wie din Teig ufgoht! 🥖',
+  'Ziit zum Stretche und Falde! 🫳',
+  'Hüt isch Backtag! 🔥',
+  'Forme din Teig vor! 🫓',
+  'Ziit zum Brot forme! 🥐',
+  'Lueg nomal nach dim Suurteig! 👀',
 ] as const
 
 export const DEFAULT_NOTIFICATION_MESSAGE = NOTIFICATION_MESSAGES[0]

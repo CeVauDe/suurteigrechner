@@ -13,8 +13,8 @@ vi.mock('web-push', () => ({
 
 // Mock notificationMessages to avoid import issues during test
 vi.mock('./notificationMessages', () => ({
-  DEFAULT_NOTIFICATION_MESSAGE: 'Time to feed your starter! 🍞',
-  NOTIFICATION_MESSAGES: ['Time to feed your starter! 🍞'],
+  DEFAULT_NOTIFICATION_MESSAGE: 'Ziit zum Starter füettere! 🍞',
+  NOTIFICATION_MESSAGES: ['Ziit zum Starter füettere! 🍞'],
   MAX_MESSAGE_LENGTH: 255,
 }))
 
@@ -107,7 +107,7 @@ describe('Notification Dispatcher', () => {
             auth: 'test-auth-key',
           },
         },
-        expect.stringContaining('Time to feed your starter!')
+        expect.stringContaining('Ziit zum Starter füettere!')
       )
     })
 
@@ -117,7 +117,7 @@ describe('Notification Dispatcher', () => {
         'test-p256dh-key',
         'test-auth-key'
       )
-      const customMessage = 'Check your dough rise! 🥖'
+      const customMessage = 'Lueg mal wie din Teig ufgoht! 🥖'
       dbModule.createReminder(subscriptionId, getPastTime(), customMessage)
       
       ;(webpush.sendNotification as Mock).mockResolvedValue({})
@@ -145,7 +145,7 @@ describe('Notification Dispatcher', () => {
 
       expect(webpush.sendNotification).toHaveBeenCalledWith(
         expect.any(Object),
-        expect.stringContaining('Time to feed your starter!')
+        expect.stringContaining('Ziit zum Starter füettere!')
       )
     })
 
@@ -373,7 +373,7 @@ describe('Notification Dispatcher', () => {
         'test-p256dh-key',
         'test-auth-key'
       )
-      const customMessage = 'Stretch and fold time! 🫳'
+      const customMessage = 'Ziit zum Stretche und Falde! 🫳'
       dbModule.createReminder(subscriptionId, getPastTime(), customMessage)
       
       const reminders = dbModule.getDueReminders() as any[]
