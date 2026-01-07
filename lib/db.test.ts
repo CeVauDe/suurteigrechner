@@ -407,5 +407,128 @@ describe('Notification Dispatcher', () => {
       expect(reminders).toHaveLength(1)
       expect(reminders[0].message).toBe(emojiMessage)
     })
+
+    it('should return the reminder id', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      const reminderId = dbModule.createReminder(subscriptionId, getPastTime(), 'Test message')
+      
+      expect(typeof reminderId).toBe('number')
+      expect(reminderId).toBeGreaterThan(0)
+    })
+  })
+
+  describe('countActiveReminders', () => {
+    // Helper to create a future time
+    function getFutureTime(hoursFromNow: number = 1): string {
+      const date = new Date(Date.now() + hoursFromNow * 3600000)
+      return date.toISOString()
+    }
+
+    it('should return 0 when no reminders exist', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      
+      const count = dbModule.countActiveReminders(subscriptionId)
+      expect(count).toBe(0)
+    })
+
+    it('should count only future reminders', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      
+      // Create one past reminder and two future reminders
+      dbModule.createReminder(subscriptionId, getPastTime())
+      dbModule.createReminder(subscriptionId, getFutureTime(1))
+      dbModule.createReminder(subscriptionId, getFutureTime(2))
+      
+      const count = dbModule.countActiveReminders(subscriptionId)
+      expect(count).toBe(2)
+    })
+
+    it('should count reminders only for the specified subscription', () => {
+      const sub1 = dbModule.saveSubscription('https://push.example.com/endpoint-1', 'key1', 'auth1')
+      const sub2 = dbModule.saveSubscription('https://push.example.com/endpoint-2', 'key2', 'auth2')
+      
+      dbModule.createReminder(sub1, getFutureTime(1))
+      dbModule.createReminder(sub1, getFutureTime(2))
+      dbModule.createReminder(sub2, getFutureTime(1))
+      
+      expect(dbModule.countActiveReminders(sub1)).toBe(2)
+      expect(dbModule.countActiveReminders(sub2)).toBe(1)
+    })
+  })
+
+  describe('deleteReminderByIdAndSubscription', () => {
+    // Helper to create a future time
+    function getFutureTime(hoursFromNow: number = 1): string {
+      const date = new Date(Date.now() + hoursFromNow * 3600000)
+      return date.toISOString()
+    }
+
+    it('should delete reminder when id and subscription match', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      const reminderId = dbModule.createReminder(subscriptionId, getFutureTime())
+      
+      const deleted = dbModule.deleteReminderByIdAndSubscription(reminderId, subscriptionId)
+      
+      expect(deleted).toBe(true)
+      expect(dbModule.countActiveReminders(subscriptionId)).toBe(0)
+    })
+
+    it('should return false when reminder does not exist', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      
+      const deleted = dbModule.deleteReminderByIdAndSubscription(99999, subscriptionId)
+      
+      expect(deleted).toBe(false)
+    })
+
+    it('should not delete reminder belonging to different subscription', () => {
+      const sub1 = dbModule.saveSubscription('https://push.example.com/endpoint-1', 'key1', 'auth1')
+      const sub2 = dbModule.saveSubscription('https://push.example.com/endpoint-2', 'key2', 'auth2')
+      
+      const reminderId = dbModule.createReminder(sub1, getFutureTime())
+      
+      // Try to delete sub1's reminder using sub2's id
+      const deleted = dbModule.deleteReminderByIdAndSubscription(reminderId, sub2)
+      
+      expect(deleted).toBe(false)
+      // Reminder should still exist
+      expect(dbModule.countActiveReminders(sub1)).toBe(1)
+    })
+
+    it('should only delete the specified reminder', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      const reminder1 = dbModule.createReminder(subscriptionId, getFutureTime(1))
+      dbModule.createReminder(subscriptionId, getFutureTime(2))
+      dbModule.createReminder(subscriptionId, getFutureTime(3))
+      
+      const deleted = dbModule.deleteReminderByIdAndSubscription(reminder1, subscriptionId)
+      
+      expect(deleted).toBe(true)
+      expect(dbModule.countActiveReminders(subscriptionId)).toBe(2)
+    })
   })
 })

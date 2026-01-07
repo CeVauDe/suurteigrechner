@@ -1,7 +1,9 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { NOTIFICATION_MESSAGES, DEFAULT_NOTIFICATION_MESSAGE, MAX_MESSAGE_LENGTH } from '../lib/notificationMessages'
+import { LocalReminder, MAX_REMINDERS } from '../lib/types'
+import { saveReminderLocally, getFutureReminders, deleteReminderLocally } from '../lib/reminderStorage'
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -28,11 +30,22 @@ export default function FeedingPlan() {
   const [status, setStatus] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [futureReminders, setFutureReminders] = useState<LocalReminder[]>([])
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  // Load and refresh reminders
+  const refreshReminders = useCallback(() => {
+    const reminders = getFutureReminders()
+    setFutureReminders(reminders)
+  }, [])
 
   useEffect(() => {
     // Set default to 12 hours from now
     const defaultTime = new Date(Date.now() + 12 * 60 * 60 * 1000)
     setReminderDateTime(formatDateTimeLocal(defaultTime))
+    
+    // Load reminders from localStorage
+    refreshReminders()
     
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.ready.then((registration) => {
@@ -41,7 +54,23 @@ export default function FeedingPlan() {
         })
       })
     }
-  }, [])
+  }, [refreshReminders])
+
+  // Periodic cleanup every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshReminders()
+    }, 60 * 1000)
+    return () => clearInterval(interval)
+  }, [refreshReminders])
+
+  // Auto-dismiss toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   // Format Date to datetime-local input format (YYYY-MM-DDTHH:mm)
   function formatDateTimeLocal(date: Date): string {
@@ -148,19 +177,66 @@ export default function FeedingPlan() {
       })
 
       if (res.ok) {
+        const data = await res.json()
         const formattedTime = selectedDate.toLocaleString()
-        setStatus(`Reminder set for ${formattedTime}!`)
+        
+        // Save locally with server ID
+        const newReminder: LocalReminder = {
+          id: data.id,
+          scheduledTime: scheduledTime,
+          message: reminderMessage.trim() || DEFAULT_NOTIFICATION_MESSAGE,
+          createdAt: new Date().toISOString()
+        }
+        saveReminderLocally(newReminder)
+        refreshReminders()
+        
+        setToast({ message: `Erinnerig gsetzt für ${formattedTime}!`, type: 'success' })
+        setStatus('')
       } else {
         const data = await res.json()
-        setStatus(`Error: ${data.message}`)
+        setStatus(`Fehler: ${data.message}`)
       }
     } catch (err) {
       console.error('Failed to schedule reminder:', err)
-      setStatus('Failed to schedule reminder.')
+      setStatus('Erinnerig konnt nöd gsetzt werde.')
     } finally {
       setLoading(false)
     }
   }
+
+  const handleDeleteReminder = async (reminder: LocalReminder) => {
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+
+      if (subscription) {
+        const res = await fetch('/api/notifications/cancel', {
+          method: 'POST',
+          body: JSON.stringify({
+            endpoint: subscription.endpoint,
+            reminderId: reminder.id
+          }),
+          headers: { 'Content-Type': 'application/json' }
+        })
+
+        if (res.ok) {
+          setToast({ message: 'Erinnerig glöscht', type: 'success' })
+        } else {
+          // Reminder might have already been sent
+          setToast({ message: 'Erinnerig isch villicht scho gschickt worde', type: 'error' })
+        }
+      }
+    } catch (err) {
+      console.error('Failed to cancel reminder:', err)
+      setToast({ message: 'Erinnerig isch villicht scho gschickt worde', type: 'error' })
+    }
+
+    // Always remove locally
+    deleteReminderLocally(reminder.id)
+    refreshReminders()
+  }
+
+  const isAtLimit = futureReminders.length >= MAX_REMINDERS
 
   return (
     <>
@@ -242,16 +318,50 @@ export default function FeedingPlan() {
                     <button 
                       className="btn btn-success btn-lg" 
                       onClick={scheduleReminder}
-                      disabled={loading}
+                      disabled={loading || isAtLimit}
+                      title={isAtLimit ? `Maximal ${MAX_REMINDERS} Erinnerige erlaubt` : undefined}
                     >
-                      {loading ? 'Lade...' : 'Erinnerig setze'}
+                      {loading ? 'Lade...' : isAtLimit ? `Maximum erreicht (${MAX_REMINDERS})` : 'Erinnerig setze'}
                     </button>
                   )}
                 </div>
 
+                {toast && (
+                  <div className={`alert mt-4 alert-dismissible fade show ${toast.type === 'success' ? 'alert-success' : 'alert-warning'}`}>
+                    {toast.message}
+                    <button type="button" className="btn-close" onClick={() => setToast(null)} aria-label="Schliesse"></button>
+                  </div>
+                )}
+
                 {status && (
-                  <div className={`alert mt-4 ${status.includes('Error') || status.includes('Failed') ? 'alert-danger' : 'alert-info'}`}>
+                  <div className={`alert mt-4 ${status.includes('Fehler') ? 'alert-danger' : 'alert-info'}`}>
                     {status}
+                  </div>
+                )}
+
+                {futureReminders.length > 0 && (
+                  <div className="mt-4">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h5 className="mb-0">Geplanti Erinnerige</h5>
+                      <span className="badge bg-secondary">{futureReminders.length}/{MAX_REMINDERS}</span>
+                    </div>
+                    <ul className="list-group">
+                      {futureReminders.map(reminder => (
+                        <li key={reminder.id} className="list-group-item d-flex justify-content-between align-items-start">
+                          <div className="me-2">
+                            <div className="fw-bold">{new Date(reminder.scheduledTime).toLocaleString()}</div>
+                            <small className="text-muted">{reminder.message}</small>
+                          </div>
+                          <button 
+                            className="btn btn-sm btn-outline-danger" 
+                            onClick={() => handleDeleteReminder(reminder)}
+                            title="Erinnerig lösche"
+                          >
+                            🗑️
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 

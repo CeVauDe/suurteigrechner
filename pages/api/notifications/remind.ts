@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import DOMPurify from 'isomorphic-dompurify'
-import { getDb, createReminder } from '../../../lib/db'
+import { getDb, createReminder, countActiveReminders } from '../../../lib/db'
 import { MAX_MESSAGE_LENGTH } from '../../../lib/notificationMessages'
+import { MAX_REMINDERS } from '../../../lib/types'
 
 export default async function handler(
   req: NextApiRequest,
@@ -49,9 +50,17 @@ export default async function handler(
       return res.status(404).json({ message: 'Subscription not found. Please subscribe first.' })
     }
 
-    createReminder(subscription.id, scheduledTime, sanitizedMessage)
+    // Check reminder limit
+    const activeCount = countActiveReminders(subscription.id)
+    if (activeCount >= MAX_REMINDERS) {
+      return res.status(429).json({ 
+        message: `Du hesch scho ${MAX_REMINDERS} Erinnerige. Lösch zerscht eini.` 
+      })
+    }
 
-    res.status(201).json({ message: 'Reminder scheduled successfully' })
+    const reminderId = createReminder(subscription.id, scheduledTime, sanitizedMessage)
+
+    res.status(201).json({ id: reminderId, message: 'Erinnerig gsetzt!' })
   } catch (error) {
     console.error('Error scheduling reminder:', error)
     res.status(500).json({ message: 'Internal server error' })
