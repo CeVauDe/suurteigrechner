@@ -22,3 +22,13 @@ export type CalculaterState = {
   starterHydration: NumberFieldState;
   counter: number;
 }
+
+// Reminder types and constants
+export const MAX_REMINDERS = 10
+
+export interface LocalReminder {
+  id: number           // Server-side reminder ID
+  scheduledTime: string // ISO datetime string
+  message: string       // The notification message
+  createdAt: string     // ISO datetime when reminder was created
+}

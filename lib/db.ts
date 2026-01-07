@@ -246,10 +246,21 @@ export function deleteSubscription(endpoint: string) {
 }
 
 // Reminder Helpers
-export function createReminder(subscriptionId: number, scheduledTime: string, message?: string) {
+export function createReminder(subscriptionId: number, scheduledTime: string, message?: string): number {
   const database = initDb()
   const stmt = database.prepare('INSERT INTO reminders (subscription_id, scheduled_time, message) VALUES (?, ?, ?)')
-  stmt.run(subscriptionId, scheduledTime, message || null)
+  const info = stmt.run(subscriptionId, scheduledTime, message || null)
+  return info.lastInsertRowid as number
+}
+
+export function countActiveReminders(subscriptionId: number): number {
+  const database = initDb()
+  const stmt = database.prepare(`
+    SELECT COUNT(*) as count FROM reminders 
+    WHERE subscription_id = ? AND scheduled_time > datetime('now')
+  `)
+  const result = stmt.get(subscriptionId) as { count: number }
+  return result.count
 }
 
 export function getDueReminders() {
@@ -268,6 +279,13 @@ export function deleteReminder(id: number) {
   const database = initDb()
   const stmt = database.prepare('DELETE FROM reminders WHERE id = ?')
   stmt.run(id)
+}
+
+export function deleteReminderByIdAndSubscription(id: number, subscriptionId: number): boolean {
+  const database = initDb()
+  const stmt = database.prepare('DELETE FROM reminders WHERE id = ? AND subscription_id = ?')
+  const info = stmt.run(id, subscriptionId)
+  return info.changes > 0
 }
 
 // Test helper to reset the database singleton
