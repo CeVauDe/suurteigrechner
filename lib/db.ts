@@ -72,9 +72,25 @@ function startDispatcher() {
   if ((global as any).__dispatcherStarted) return
 
   console.log('[Dispatcher] Initializing notification dispatcher...')
+  
   const INTERVAL = 60 * 1000 // Run every minute
-  setInterval(dispatchNotifications, INTERVAL)
+  const BUFFER = 1000 // Run 1 second after the minute mark to catch reminders for :00
+  
+  // Run immediately to catch any overdue reminders
   dispatchNotifications()
+  
+  function scheduleNext() {
+    // Calculate delay until 1 second after the next minute boundary
+    const now = Date.now()
+    const msUntilNextMinute = INTERVAL - (now % INTERVAL) + BUFFER
+    
+    setTimeout(() => {
+      dispatchNotifications()
+      scheduleNext() // Self-correcting: recalculates each time
+    }, msUntilNextMinute)
+  }
+  
+  scheduleNext()
   ;(global as any).__dispatcherStarted = true
 }
 
