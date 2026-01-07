@@ -11,6 +11,13 @@ vi.mock('web-push', () => ({
   },
 }))
 
+// Mock notificationMessages to avoid import issues during test
+vi.mock('./notificationMessages', () => ({
+  DEFAULT_NOTIFICATION_MESSAGE: 'Time to feed your starter! 🍞',
+  NOTIFICATION_MESSAGES: ['Time to feed your starter! 🍞'],
+  MAX_MESSAGE_LENGTH: 255,
+}))
+
 // Mock console methods to verify logging
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
 const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -100,6 +107,44 @@ describe('Notification Dispatcher', () => {
             auth: 'test-auth-key',
           },
         },
+        expect.stringContaining('Time to feed your starter!')
+      )
+    })
+
+    it('should send notification with custom message', async () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      const customMessage = 'Check your dough rise! 🥖'
+      dbModule.createReminder(subscriptionId, getPastTime(), customMessage)
+      
+      ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+      await dbModule.dispatchNotifications()
+
+      expect(webpush.sendNotification).toHaveBeenCalledTimes(1)
+      expect(webpush.sendNotification).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.stringContaining(customMessage)
+      )
+    })
+
+    it('should use default message when custom message is null', async () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      dbModule.createReminder(subscriptionId, getPastTime(), undefined)
+      
+      ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+      await dbModule.dispatchNotifications()
+
+      expect(webpush.sendNotification).toHaveBeenCalledWith(
+        expect.any(Object),
         expect.stringContaining('Time to feed your starter!')
       )
     })
@@ -318,6 +363,49 @@ describe('Notification Dispatcher', () => {
       const db = dbModule.getDb()
       const subsAfter = db.prepare('SELECT * FROM push_subscriptions').all()
       expect(subsAfter).toHaveLength(2)
+    })
+  })
+
+  describe('createReminder with message', () => {
+    it('should store custom message in database', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      const customMessage = 'Stretch and fold time! 🫳'
+      dbModule.createReminder(subscriptionId, getPastTime(), customMessage)
+      
+      const reminders = dbModule.getDueReminders() as any[]
+      expect(reminders).toHaveLength(1)
+      expect(reminders[0].message).toBe(customMessage)
+    })
+
+    it('should store null when no message provided', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      dbModule.createReminder(subscriptionId, getPastTime())
+      
+      const reminders = dbModule.getDueReminders() as any[]
+      expect(reminders).toHaveLength(1)
+      expect(reminders[0].message).toBeNull()
+    })
+
+    it('should handle emoji messages correctly', () => {
+      const subscriptionId = dbModule.saveSubscription(
+        'https://push.example.com/test-endpoint',
+        'test-p256dh-key',
+        'test-auth-key'
+      )
+      const emojiMessage = '🍞🥖🫓🥐 Baking time! 🔥'
+      dbModule.createReminder(subscriptionId, getPastTime(), emojiMessage)
+      
+      const reminders = dbModule.getDueReminders() as any[]
+      expect(reminders).toHaveLength(1)
+      expect(reminders[0].message).toBe(emojiMessage)
     })
   })
 })

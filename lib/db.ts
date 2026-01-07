@@ -3,6 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
 import webpush from 'web-push'
+import { DEFAULT_NOTIFICATION_MESSAGE } from './notificationMessages'
 
 // Use Railway's mounted volume, fallback to temp directory, then current dir
 const DB_PATH = process.env.SQLITE_DB_PATH || path.join(os.tmpdir(), 'db.sqlite')
@@ -46,7 +47,7 @@ export async function dispatchNotifications() {
           pushSubscription,
           JSON.stringify({
             title: 'Suurteigrechner',
-            body: 'Time to feed your starter! 🥖',
+            body: reminder.message || DEFAULT_NOTIFICATION_MESSAGE,
             icon: '/icons/icon-192x192.png',
             data: { url: '/feedingplan' }
           })
@@ -148,6 +149,17 @@ function initDb() {
       console.log('[DB] Migration complete')
     }
     
+    // Migration: Add message column to reminders table if it doesn't exist
+    const hasMessageColumn = db.prepare(`
+      SELECT COUNT(*) as count FROM pragma_table_info('reminders') WHERE name = 'message'
+    `).get() as { count: number }
+    
+    if (hasMessageColumn.count === 0) {
+      console.log('[DB] Migrating: adding message column to reminders table')
+      db.exec(`ALTER TABLE reminders ADD COLUMN message TEXT`)
+      console.log('[DB] Migration complete')
+    }
+    
     console.log('[DB] Tables initialized')
 
     // Start the notification dispatcher
@@ -178,7 +190,7 @@ export interface ReminderRow {
   id: number
   subscription_id: number
   scheduled_time: string
-  last_notified_at: string | null
+  message: string | null
 }
 
 export function getLatestEntries(limit = 10): Entry[] {
@@ -234,17 +246,17 @@ export function deleteSubscription(endpoint: string) {
 }
 
 // Reminder Helpers
-export function createReminder(subscriptionId: number, scheduledTime: string) {
+export function createReminder(subscriptionId: number, scheduledTime: string, message?: string) {
   const database = initDb()
-  const stmt = database.prepare('INSERT INTO reminders (subscription_id, scheduled_time) VALUES (?, ?)')
-  stmt.run(subscriptionId, scheduledTime)
+  const stmt = database.prepare('INSERT INTO reminders (subscription_id, scheduled_time, message) VALUES (?, ?, ?)')
+  stmt.run(subscriptionId, scheduledTime, message || null)
 }
 
 export function getDueReminders() {
   const database = initDb()
   // Get reminders where scheduled_time is in the past
   const stmt = database.prepare(`
-    SELECT r.*, s.endpoint, s.p256dh, s.auth
+    SELECT r.id, r.subscription_id, r.scheduled_time, r.message, s.endpoint, s.p256dh, s.auth
     FROM reminders r
     JOIN push_subscriptions s ON r.subscription_id = s.id
     WHERE r.scheduled_time <= CURRENT_TIMESTAMP
