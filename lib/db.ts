@@ -7,6 +7,9 @@ import webpush from 'web-push'
 // Use Railway's mounted volume, fallback to temp directory, then current dir
 const DB_PATH = process.env.SQLITE_DB_PATH || path.join(os.tmpdir(), 'db.sqlite')
 
+// Flag to disable dispatcher auto-start (useful for testing)
+const DISABLE_DISPATCHER = process.env.DISABLE_DISPATCHER === 'true'
+
 let db: Database.Database | null = null
 
 // Configure web-push
@@ -21,7 +24,7 @@ if (publicKey && privateKey) {
   )
 }
 
-async function dispatchNotifications() {
+export async function dispatchNotifications() {
   console.log('[Dispatcher] Checking for due reminders...')
   try {
     const reminders = getDueReminders() as any[]
@@ -49,7 +52,7 @@ async function dispatchNotifications() {
           })
         )
         console.log(`[Dispatcher] Notification sent to ${reminder.endpoint}`)
-        updateReminderNotified(reminder.id)
+        deleteReminder(reminder.id)
       } catch (error: any) {
         console.error(`[Dispatcher] Failed to send notification to ${reminder.endpoint}:`, error)
         if (error.statusCode === 410 || error.statusCode === 404) {
@@ -64,6 +67,7 @@ async function dispatchNotifications() {
 }
 
 function startDispatcher() {
+  if (DISABLE_DISPATCHER) return
   if ((global as any).__dispatcherStarted) return
 
   console.log('[Dispatcher] Initializing notification dispatcher...')
@@ -118,10 +122,31 @@ function initDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         subscription_id INTEGER NOT NULL,
         scheduled_time DATETIME NOT NULL,
-        last_notified_at DATETIME,
         FOREIGN KEY (subscription_id) REFERENCES push_subscriptions(id) ON DELETE CASCADE
       );
     `)
+    
+    // Migration: Remove last_notified_at column if it exists (no longer needed)
+    const hasLastNotifiedAt = db.prepare(`
+      SELECT COUNT(*) as count FROM pragma_table_info('reminders') WHERE name = 'last_notified_at'
+    `).get() as { count: number }
+    
+    if (hasLastNotifiedAt.count > 0) {
+      console.log('[DB] Migrating: removing last_notified_at column from reminders table')
+      db.exec(`
+        CREATE TABLE reminders_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          subscription_id INTEGER NOT NULL,
+          scheduled_time DATETIME NOT NULL,
+          FOREIGN KEY (subscription_id) REFERENCES push_subscriptions(id) ON DELETE CASCADE
+        );
+        INSERT INTO reminders_new (id, subscription_id, scheduled_time)
+          SELECT id, subscription_id, scheduled_time FROM reminders;
+        DROP TABLE reminders;
+        ALTER TABLE reminders_new RENAME TO reminders;
+      `)
+      console.log('[DB] Migration complete')
+    }
     
     console.log('[DB] Tables initialized')
 
@@ -217,19 +242,27 @@ export function createReminder(subscriptionId: number, scheduledTime: string) {
 
 export function getDueReminders() {
   const database = initDb()
-  // Get reminders where scheduled_time is in the past AND (last_notified_at is null OR > 15 mins ago)
+  // Get reminders where scheduled_time is in the past
   const stmt = database.prepare(`
     SELECT r.*, s.endpoint, s.p256dh, s.auth
     FROM reminders r
     JOIN push_subscriptions s ON r.subscription_id = s.id
     WHERE r.scheduled_time <= CURRENT_TIMESTAMP
-    AND (r.last_notified_at IS NULL OR r.last_notified_at <= datetime('now', '-15 minutes'))
   `)
   return stmt.all()
 }
 
-export function updateReminderNotified(id: number) {
+export function deleteReminder(id: number) {
   const database = initDb()
-  const stmt = database.prepare('UPDATE reminders SET last_notified_at = CURRENT_TIMESTAMP WHERE id = ?')
+  const stmt = database.prepare('DELETE FROM reminders WHERE id = ?')
   stmt.run(id)
+}
+
+// Test helper to reset the database singleton
+export function resetDb() {
+  if (db) {
+    db.close()
+    db = null
+  }
+  ;(global as any).__dispatcherStarted = false
 }
