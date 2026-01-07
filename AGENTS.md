@@ -37,6 +37,14 @@ The calculator handles the relationship between:
 - **Database**: SQLite is stored in `/data/db.sqlite` (mapped via Docker volume in production).
 - **Styling**: Prefer Bootstrap classes for layout and SCSS for custom components.
 - **PWA**: Ensure any new assets are correctly cached in the service worker if necessary.
+- **Testing**: Run tests with `npm run test:run`. Changes to `lib/db.ts` require corresponding tests in `lib/db.test.ts` and must pass before committing.
+
+## Testing Requirements
+- **Database module (`lib/db.ts`)**: Every change to this file requires:
+  1. Writing or updating tests in `lib/db.test.ts`
+  2. Running `npm run test:run` and ensuring all tests pass
+  3. Tests use real SQLite databases (temp files) with mocked `web-push` module
+  4. Set `DISABLE_DISPATCHER=true` in tests to prevent auto-starting the notification dispatcher
 
 ## Common Tasks
 - **Updating Math**: Check `lib/calc.ts` for ingredient calculation formulas.
