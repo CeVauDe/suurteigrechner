@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { NOTIFICATION_MESSAGES, DEFAULT_NOTIFICATION_MESSAGE, MAX_MESSAGE_LENGTH } from '../lib/notificationMessages'
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -22,6 +23,8 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export default function FeedingPlan() {
   const [reminderDateTime, setReminderDateTime] = useState('')
+  const [reminderMessage, setReminderMessage] = useState<string>(DEFAULT_NOTIFICATION_MESSAGE)
+  const [isCustomMessage, setIsCustomMessage] = useState(false)
   const [status, setStatus] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -138,7 +141,8 @@ export default function FeedingPlan() {
         method: 'POST',
         body: JSON.stringify({
           endpoint: subscription.endpoint,
-          scheduledTime
+          scheduledTime,
+          message: reminderMessage.trim() || undefined
         }),
         headers: { 'Content-Type': 'application/json' }
       })
@@ -178,6 +182,51 @@ export default function FeedingPlan() {
                     value={reminderDateTime} 
                     onChange={(e) => setReminderDateTime(e.target.value)}
                   />
+                </div>
+
+                <div className="mb-4">
+                  <label className="form-label">Notification message</label>
+                  {isCustomMessage ? (
+                    <input 
+                      type="text"
+                      className="form-control form-control-lg"
+                      value={reminderMessage}
+                      onChange={(e) => setReminderMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                      onBlur={() => {
+                        // If empty, switch back to dropdown with default
+                        if (!reminderMessage.trim()) {
+                          setIsCustomMessage(false)
+                          setReminderMessage(DEFAULT_NOTIFICATION_MESSAGE)
+                        }
+                      }}
+                      placeholder="Type your custom message..."
+                      maxLength={MAX_MESSAGE_LENGTH}
+                      autoFocus
+                    />
+                  ) : (
+                    <select
+                      className="form-select form-select-lg"
+                      value={reminderMessage}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setIsCustomMessage(true)
+                          setReminderMessage('')
+                        } else {
+                          setReminderMessage(e.target.value)
+                        }
+                      }}
+                    >
+                      {NOTIFICATION_MESSAGES.map((msg, index) => (
+                        <option key={index} value={msg}>{msg}</option>
+                      ))}
+                      <option value="__custom__">✏️ Custom message...</option>
+                    </select>
+                  )}
+                  {isCustomMessage && (
+                    <div className="form-text text-end">
+                      {reminderMessage.length}/{MAX_MESSAGE_LENGTH}
+                    </div>
+                  )}
                 </div>
 
                 <div className="d-grid gap-2">
