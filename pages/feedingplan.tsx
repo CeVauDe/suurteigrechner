@@ -40,8 +40,8 @@ export default function FeedingPlan() {
   }, [])
 
   useEffect(() => {
-    // Set default to 12 hours from now
-    const defaultTime = new Date(Date.now() + 12 * 60 * 60 * 1000)
+    // Set default to 1 hour from now
+    const defaultTime = new Date(Date.now() + 1 * 60 * 60 * 1000)
     setReminderDateTime(formatDateTimeLocal(defaultTime))
     
     // Load reminders from localStorage
