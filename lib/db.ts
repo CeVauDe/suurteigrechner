@@ -160,6 +160,22 @@ function initDb() {
       console.log('[DB] Migration complete')
     }
     
+    // Migration: Convert ISO datetime format to SQLite format
+    // Check if any reminders have 'T' in scheduled_time (ISO format)
+    const hasIsoFormat = db.prepare(`
+      SELECT COUNT(*) as count FROM reminders WHERE scheduled_time LIKE '%T%'
+    `).get() as { count: number }
+    
+    if (hasIsoFormat.count > 0) {
+      console.log('[DB] Migrating: converting ISO datetime format to SQLite format')
+      db.exec(`
+        UPDATE reminders 
+        SET scheduled_time = replace(replace(scheduled_time, 'T', ' '), 'Z', '')
+        WHERE scheduled_time LIKE '%T%'
+      `)
+      console.log('[DB] Migration complete')
+    }
+    
     console.log('[DB] Tables initialized')
 
     // Start the notification dispatcher
@@ -246,10 +262,18 @@ export function deleteSubscription(endpoint: string) {
 }
 
 // Reminder Helpers
+
+// Convert ISO datetime (2026-01-07T13:00:00.000Z) to SQLite format (2026-01-07 13:00:00.000)
+function toSqliteDatetime(isoString: string): string {
+  return isoString.replace('T', ' ').replace('Z', '')
+}
+
 export function createReminder(subscriptionId: number, scheduledTime: string, message?: string): number {
   const database = initDb()
+  // Convert ISO format to SQLite-compatible format for proper datetime comparisons
+  const sqliteTime = toSqliteDatetime(scheduledTime)
   const stmt = database.prepare('INSERT INTO reminders (subscription_id, scheduled_time, message) VALUES (?, ?, ?)')
-  const info = stmt.run(subscriptionId, scheduledTime, message || null)
+  const info = stmt.run(subscriptionId, sqliteTime, message || null)
   return info.lastInsertRowid as number
 }
 
@@ -270,7 +294,7 @@ export function getDueReminders() {
     SELECT r.id, r.subscription_id, r.scheduled_time, r.message, s.endpoint, s.p256dh, s.auth
     FROM reminders r
     JOIN push_subscriptions s ON r.subscription_id = s.id
-    WHERE r.scheduled_time <= CURRENT_TIMESTAMP
+    WHERE r.scheduled_time <= datetime('now')
   `)
   return stmt.all()
 }
