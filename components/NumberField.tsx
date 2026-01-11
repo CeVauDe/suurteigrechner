@@ -73,6 +73,10 @@ export default function NumberField({ label, state, name, value, onChange, onChe
     schedule(v);
   };
 
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select();
+  };
+
   const handleBlur = () => {
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
@@ -115,6 +119,7 @@ export default function NumberField({ label, state, name, value, onChange, onChe
             onChange={handleChange}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
             min={state ? state.min : undefined}
             max={state ? state.max : undefined}
             disabled={numberDisabled}
