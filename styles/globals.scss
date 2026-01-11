@@ -45,6 +45,10 @@ body {
     background-color: $light-brown;
 }
 
+.list-group-item {
+    background-color: $light;
+}
+
 /* Keep some existing customized form-check styles */
 .form-check-input[type="checkbox"] {
     background-color: $light;

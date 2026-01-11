@@ -308,7 +308,7 @@ export default function FeedingPlan() {
                 <div className="d-grid gap-2">
                   {!isSubscribed ? (
                     <button 
-                      className="btn btn-primary btn-lg" 
+                      className="btn btn-secondary btn-lg" 
                       onClick={subscribeUser}
                       disabled={loading}
                     >
@@ -316,7 +316,7 @@ export default function FeedingPlan() {
                     </button>
                   ) : (
                     <button 
-                      className="btn btn-success btn-lg" 
+                      className="btn btn-primary btn-lg" 
                       onClick={scheduleReminder}
                       disabled={loading || isAtLimit}
                       title={isAtLimit ? `Maximal ${MAX_REMINDERS} Erinnerige erlaubt` : undefined}
@@ -353,11 +353,11 @@ export default function FeedingPlan() {
                             <small className="text-muted">{reminder.message}</small>
                           </div>
                           <button 
-                            className="btn btn-sm btn-outline-danger" 
+                            className="btn btn-sm btn-outline-primary align-self-center" 
                             onClick={() => handleDeleteReminder(reminder)}
                             title="Erinnerig lösche"
                           >
-                            🗑️
+                            <i className="fa-solid fa-trash-can"></i>
                           </button>
                         </li>
                       ))}
