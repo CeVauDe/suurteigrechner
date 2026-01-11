@@ -93,7 +93,7 @@ const Calculator = () => {
         </div>
         <div className="card mb-3">
           <div className="card-header btn-primary">
-            Was du willsch
+            Was du wotsch
           </div>
           <div className="card-body">
             <NumberField label='Hydration' name='hydration' state={fields.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
@@ -110,7 +110,7 @@ const Calculator = () => {
             <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled />
           </div>
         </div>
-        <button className='btn btn-primary' onClick={reset}>zrüggsetze</button>
+        <button className='btn btn-primary' onClick={reset}>alles zrüggsetze</button>
       </form>
 
     </>
