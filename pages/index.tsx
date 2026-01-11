@@ -19,19 +19,11 @@ export default function Home() {
       {/* Calculator on home */}
       <div className="container">
         <div className="row justify-content-center">
-          <div className="col-lg-6 col-md-8">
+          <div className="col-lg-6 col-md-8 mb-5">
             <Calculator />
           </div>
         </div>
       </div>
-
-      {/* Quick links */}
-      <div className="text-center mt-4">
-        <Link href="/guestbook" className="btn btn-secondary me-2">Gästebuech</Link>
-        <Link href="/feedingplan" className="btn btn-secondary">Füertterigsplan</Link>
-      </div>
-
-
     </>
   )
 }
