@@ -7,9 +7,9 @@
 export const NOTIFICATION_MESSAGES = [
   'Ziit zum Starter füettere! 🍞',
   'Lueg mal wie din Teig ufgoht! 🥖',
-  'Ziit zum Stretche und Falde! 🫳',
+  'Ziit zum Chnätä! 🫳',
   'Hüt isch Backtag! 🔥',
-  'Forme din Teig vor! 🫓',
+  'Form din Teig vor! 🫓',
   'Ziit zum Brot forme! 🥐',
   'Lueg nomal nach dim Suurteig! 👀',
 ] as const

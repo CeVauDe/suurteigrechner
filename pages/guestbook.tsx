@@ -75,11 +75,11 @@ export default function Guestbook() {
 
       <div className="min-h-screen py-12 px-4">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-6xl font-bold text-center mb-12 text-slate-100">Guestbook</h1>
+          <h1 className="text-6xl font-bold text-center mb-12 text-slate-100">Gästebuech</h1>
 
           {!isOnline && (
             <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center text-yellow-400">
-              <p className="text-sm">You are offline. Guestbook features are not available, but you can still view cached content.</p>
+              <p className="text-sm">Ohni Internet gits leider kes Gästebuech.</p>
             </div>
           )}
 
@@ -97,7 +97,7 @@ export default function Guestbook() {
                   maxLength={280}
                   value={text}
                   onChange={e => setText(e.target.value)}
-                  placeholder="Leave a message..."
+                  placeholder="Schrieb üs e Nachricht..."
                   aria-label="Your message"
                   disabled={!isOnline}
                 />
@@ -114,9 +114,9 @@ export default function Guestbook() {
 
           <div className="space-y-8">
             {!isOnline && entries.length === 0 ? (
-              <p className="text-center text-slate-500 text-lg">Guestbook entries are not available offline.</p>
+              <p className="text-center text-slate-500 text-lg">Ohni Internet gits leider kes Gästebuech.</p>
             ) : entries.length === 0 ? (
-              <p className="text-center text-slate-500 text-lg">No messages yet. Be the first!</p>
+              <p className="text-center text-slate-500 text-lg">Bis jetzt steit hier no nüt. Du chasch de erst si!</p>
             ) : (
               entries.slice(0, 10).map((entry) => (
                 <div key={entry.id} className="text-center">

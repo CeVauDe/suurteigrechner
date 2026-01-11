@@ -93,7 +93,7 @@ const Calculator = () => {
         </div>
         <div className="card mb-3">
           <div className="card-header btn-primary">
-            Was du willsch
+            Was du wotsch
           </div>
           <div className="card-body">
             <NumberField label='Hydration' name='hydration' state={fields.hydration} onChange={handleHydrationChange} onChecked={() => toggle("hydration")} />
