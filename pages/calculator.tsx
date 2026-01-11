@@ -110,7 +110,7 @@ const Calculator = () => {
             <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled />
           </div>
         </div>
-        <button className='btn btn-primary' onClick={reset}>zrüggsetze</button>
+        <button className='btn btn-primary' onClick={reset}>alles zrüggsetze</button>
       </form>
 
     </>
