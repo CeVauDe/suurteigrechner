@@ -103,6 +103,7 @@ export default function NumberField({ label, state, name, value, onChange, onChe
             <div className='input-group-text'>
               <span title="Konstant halten">
                 <input type="checkbox" className="form-check-input" checked={checkboxChecked} onChange={() => onChecked && onChecked()} disabled={checkboxDisabled} />
+                <span className="icon"></span>
               </span>
             </div>
           )}

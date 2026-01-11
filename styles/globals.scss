@@ -57,7 +57,6 @@ body {
 
 /* Keep some existing customized form-check styles */
 .form-check-input[type="checkbox"] {
-    border-radius: 50px;
     background-color: $light;
 }
 
@@ -71,8 +70,9 @@ body {
 }
 
 .form-check-input:checked::after {
-    content: "C";
-    border-radius: 50px;
+    content: "\f023";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
     color: $primary;
     display: block;
     font-size: 0.75rem;
