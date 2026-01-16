@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import { NOTIFICATION_MESSAGES, DEFAULT_NOTIFICATION_MESSAGE, MAX_MESSAGE_LENGTH } from '../lib/notificationMessages'
-import { LocalReminder, MAX_REMINDERS } from '../lib/types'
+import { LocalReminder, MAX_REMINDERS, RECURRENCE_OPTIONS } from '../lib/types'
 import { saveReminderLocally, getFutureReminders, deleteReminderLocally } from '../lib/reminderStorage'
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -27,6 +27,8 @@ export default function FeedingPlan() {
   const [reminderDateTime, setReminderDateTime] = useState('')
   const [reminderMessage, setReminderMessage] = useState<string>(DEFAULT_NOTIFICATION_MESSAGE)
   const [isCustomMessage, setIsCustomMessage] = useState(false)
+  const [recurrenceIntervalHours, setRecurrenceIntervalHours] = useState<number | null>(null)
+  const [endDate, setEndDate] = useState('')
   const [status, setStatus] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -166,12 +168,20 @@ export default function FeedingPlan() {
 
       const scheduledTime = selectedDate.toISOString()
 
+      // Convert end date to end-of-day UTC if provided
+      let endDateUtc: string | undefined
+      if (recurrenceIntervalHours && endDate) {
+        endDateUtc = new Date(endDate + 'T23:59:59').toISOString()
+      }
+
       const res = await fetch('/api/notifications/remind', {
         method: 'POST',
         body: JSON.stringify({
           endpoint: subscription.endpoint,
           scheduledTime,
-          message: reminderMessage.trim() || undefined
+          message: reminderMessage.trim() || undefined,
+          recurrenceIntervalHours,
+          endDate: endDateUtc
         }),
         headers: { 'Content-Type': 'application/json' }
       })
@@ -185,13 +195,22 @@ export default function FeedingPlan() {
           id: data.id,
           scheduledTime: scheduledTime,
           message: reminderMessage.trim() || DEFAULT_NOTIFICATION_MESSAGE,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          recurrenceIntervalHours,
+          endDate: data.endDate  // Use server's end date (may be capped at 1 year)
         }
         saveReminderLocally(newReminder)
         refreshReminders()
         
-        setToast({ message: `Erinnerig gsetzt für ${formattedTime}!`, type: 'success' })
+        const recurrenceLabel = RECURRENCE_OPTIONS.find(o => o.hours === recurrenceIntervalHours)?.label
+        const toastMessage = recurrenceIntervalHours 
+          ? `${recurrenceLabel} Erinnerig gsetzt ab ${formattedTime}!`
+          : `Erinnerig gsetzt für ${formattedTime}!`
+        setToast({ message: toastMessage, type: 'success' })
         setStatus('')
+        
+        // Reset form
+        setEndDate('')
       } else {
         const data = await res.json()
         setStatus(`Fehler: ${data.message}`)
@@ -305,6 +324,34 @@ export default function FeedingPlan() {
                   )}
                 </div>
 
+                <div className="mb-4">
+                  <label className="form-label">Wiederholig</label>
+                  <select 
+                    className="form-select form-select-lg"
+                    value={recurrenceIntervalHours ?? ''}
+                    onChange={(e) => setRecurrenceIntervalHours(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    {RECURRENCE_OPTIONS.map(opt => (
+                      <option key={opt.hours ?? 'once'} value={opt.hours ?? ''}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {recurrenceIntervalHours !== null && (
+                  <div className="mb-4">
+                    <label className="form-label">Bis (optional)</label>
+                    <input 
+                      type="date" 
+                      className="form-control form-control-lg"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                    />
+                    <div className="form-text">Maximal 1 Jahr. Ohni Uswahl lauft d&apos;Erinnerig 1 Jahr.</div>
+                  </div>
+                )}
+
                 <div className="d-grid gap-2">
                   {!isSubscribed ? (
                     <button 
@@ -349,8 +396,20 @@ export default function FeedingPlan() {
                       {futureReminders.map(reminder => (
                         <li key={reminder.id} className="list-group-item d-flex justify-content-between align-items-start">
                           <div className="me-2">
-                            <div className="fw-bold">{new Date(reminder.scheduledTime).toLocaleString()}</div>
+                            <div className="fw-bold">
+                              {new Date(reminder.scheduledTime).toLocaleString()}
+                              {reminder.recurrenceIntervalHours && (
+                                <span className="badge bg-info ms-2">
+                                  {RECURRENCE_OPTIONS.find(o => o.hours === reminder.recurrenceIntervalHours)?.label}
+                                </span>
+                              )}
+                            </div>
                             <small className="text-muted">{reminder.message}</small>
+                            {reminder.recurrenceIntervalHours && reminder.endDate && (
+                              <small className="text-muted d-block">
+                                bis {new Date(reminder.endDate).toLocaleDateString()}
+                              </small>
+                            )}
                           </div>
                           <button 
                             className="btn btn-sm btn-outline-primary align-self-center" 

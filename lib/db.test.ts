@@ -23,7 +23,7 @@ const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
 const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
 
 // Store references to imported modules (will be re-imported each test)
-let webpush: typeof import('web-push').default
+let webpush: typeof import('web-push')
 let dbModule: typeof import('./db')
 let testDbPath: string
 
