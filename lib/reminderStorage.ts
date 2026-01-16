@@ -27,8 +27,15 @@ export function getFutureReminders(): LocalReminder[] {
   const reminders: LocalReminder[] = JSON.parse(stored)
   const now = new Date().toISOString()
   
-  // Filter to only future reminders
-  const futureReminders = reminders.filter(r => r.scheduledTime > now)
+  // Filter to only future/active reminders
+  const futureReminders = reminders.filter(r => {
+    // For recurring reminders, check if end date is still in the future
+    if (r.recurrenceIntervalHours && r.endDate) {
+      return r.endDate > now
+    }
+    // For one-time reminders, check scheduled time
+    return r.scheduledTime > now
+  })
   
   // Persist the cleaned list (removes past reminders)
   localStorage.setItem(REMINDERS_KEY, JSON.stringify(futureReminders))
