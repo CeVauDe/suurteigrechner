@@ -42,18 +42,47 @@ export async function dispatchNotifications() {
         }
       }
 
+      // Determine if this is the last notification for a recurring reminder
+      let isLastNotification = false
+      let messageToSend = reminder.message || DEFAULT_NOTIFICATION_MESSAGE
+      
+      if (reminder.recurrence_interval_hours && reminder.end_date) {
+        const nextTime = new Date(reminder.scheduled_time.replace(' ', 'T') + 'Z')
+        nextTime.setTime(nextTime.getTime() + reminder.recurrence_interval_hours * 60 * 60 * 1000)
+        const endDate = new Date(reminder.end_date.replace(' ', 'T') + 'Z')
+        isLastNotification = nextTime > endDate
+        
+        if (isLastNotification) {
+          messageToSend = `${messageToSend} (Letschti Erinnerig – stell e neui ii, falls weiter wotsch)`
+        }
+      }
+
       try {
         await webpush.sendNotification(
           pushSubscription,
           JSON.stringify({
             title: 'Suurteigrechner',
-            body: reminder.message || DEFAULT_NOTIFICATION_MESSAGE,
+            body: messageToSend,
             icon: '/icons/icon-192x192.png',
             data: { url: '/feedingplan' }
           })
         )
         console.log(`[Dispatcher] Notification sent to ${reminder.endpoint}`)
-        deleteReminder(reminder.id)
+        
+        // Handle recurring vs one-time reminders
+        if (!reminder.recurrence_interval_hours) {
+          // One-time reminder: delete after sending
+          deleteReminder(reminder.id)
+        } else if (isLastNotification) {
+          // Recurring reminder, but this was the last one: delete
+          deleteReminder(reminder.id)
+        } else {
+          // Recurring reminder: reschedule for next occurrence
+          const nextTime = new Date(reminder.scheduled_time.replace(' ', 'T') + 'Z')
+          nextTime.setTime(nextTime.getTime() + reminder.recurrence_interval_hours * 60 * 60 * 1000)
+          updateReminderScheduledTime(reminder.id, nextTime.toISOString())
+          console.log(`[Dispatcher] Rescheduled recurring reminder ${reminder.id} for ${nextTime.toISOString()}`)
+        }
       } catch (error: any) {
         console.error(`[Dispatcher] Failed to send notification to ${reminder.endpoint}:`, error)
         if (error.statusCode === 410 || error.statusCode === 404) {
@@ -176,6 +205,20 @@ function initDb() {
       console.log('[DB] Migration complete')
     }
     
+    // Migration: Add recurrence columns to reminders table if they don't exist
+    const hasRecurrenceColumn = db.prepare(`
+      SELECT COUNT(*) as count FROM pragma_table_info('reminders') WHERE name = 'recurrence_interval_hours'
+    `).get() as { count: number }
+    
+    if (hasRecurrenceColumn.count === 0) {
+      console.log('[DB] Migrating: adding recurrence columns to reminders table')
+      db.exec(`
+        ALTER TABLE reminders ADD COLUMN recurrence_interval_hours INTEGER;
+        ALTER TABLE reminders ADD COLUMN end_date DATETIME;
+      `)
+      console.log('[DB] Migration complete')
+    }
+    
     // Migration: Convert ISO datetime format to SQLite format
     // Check if any reminders have 'T' in scheduled_time (ISO format)
     const hasIsoFormat = db.prepare(`
@@ -223,6 +266,8 @@ export interface ReminderRow {
   subscription_id: number
   scheduled_time: string
   message: string | null
+  recurrence_interval_hours: number | null
+  end_date: string | null
 }
 
 export function getLatestEntries(limit = 10): Entry[] {
@@ -284,12 +329,48 @@ function toSqliteDatetime(isoString: string): string {
   return isoString.replace('T', ' ').replace('Z', '')
 }
 
-export function createReminder(subscriptionId: number, scheduledTime: string, message?: string): number {
+export interface CreateReminderOptions {
+  subscriptionId: number
+  scheduledTime: string
+  message?: string
+  recurrenceIntervalHours?: number | null
+  endDate?: string | null
+}
+
+export function createReminder(
+  subscriptionIdOrOptions: number | CreateReminderOptions,
+  scheduledTime?: string,
+  message?: string
+): number {
   const database = initDb()
+  
+  // Support both old signature and new options object
+  let options: CreateReminderOptions
+  if (typeof subscriptionIdOrOptions === 'number') {
+    options = {
+      subscriptionId: subscriptionIdOrOptions,
+      scheduledTime: scheduledTime!,
+      message,
+    }
+  } else {
+    options = subscriptionIdOrOptions
+  }
+  
   // Convert ISO format to SQLite-compatible format for proper datetime comparisons
-  const sqliteTime = toSqliteDatetime(scheduledTime)
-  const stmt = database.prepare('INSERT INTO reminders (subscription_id, scheduled_time, message) VALUES (?, ?, ?)')
-  const info = stmt.run(subscriptionId, sqliteTime, message || null)
+  const sqliteTime = toSqliteDatetime(options.scheduledTime)
+  const sqliteEndDate = options.endDate ? toSqliteDatetime(options.endDate) : null
+  
+  const stmt = database.prepare(`
+    INSERT INTO reminders (subscription_id, scheduled_time, message, recurrence_interval_hours, end_date) 
+    VALUES (?, ?, ?, ?, ?)
+  `)
+  const info = stmt.run(
+    options.subscriptionId,
+    sqliteTime,
+    options.message || null,
+    options.recurrenceIntervalHours ?? null,
+    sqliteEndDate
+  )
   return info.lastInsertRowid as number
 }
 
@@ -307,7 +388,9 @@ export function getDueReminders() {
   const database = initDb()
   // Get reminders where scheduled_time is in the past
   const stmt = database.prepare(`
-    SELECT r.id, r.subscription_id, r.scheduled_time, r.message, s.endpoint, s.p256dh, s.auth
+    SELECT r.id, r.subscription_id, r.scheduled_time, r.message, 
+           r.recurrence_interval_hours, r.end_date,
+           s.endpoint, s.p256dh, s.auth
     FROM reminders r
     JOIN push_subscriptions s ON r.subscription_id = s.id
     WHERE r.scheduled_time <= datetime('now')
@@ -319,6 +402,13 @@ export function deleteReminder(id: number) {
   const database = initDb()
   const stmt = database.prepare('DELETE FROM reminders WHERE id = ?')
   stmt.run(id)
+}
+
+export function updateReminderScheduledTime(id: number, scheduledTime: string) {
+  const database = initDb()
+  const sqliteTime = toSqliteDatetime(scheduledTime)
+  const stmt = database.prepare('UPDATE reminders SET scheduled_time = ? WHERE id = ?')
+  stmt.run(sqliteTime, id)
 }
 
 export function deleteReminderByIdAndSubscription(id: number, subscriptionId: number): boolean {
