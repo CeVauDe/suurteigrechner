@@ -531,4 +531,282 @@ describe('Notification Dispatcher', () => {
       expect(dbModule.countActiveReminders(subscriptionId)).toBe(2)
     })
   })
+
+  describe('Recurring Reminders', () => {
+    describe('createReminder with recurrence options', () => {
+      it('should create a recurring reminder with interval and end date', () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 1 week from now
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Daily reminder',
+          recurrenceIntervalHours: 24,
+          endDate: endDate.toISOString()
+        })
+        
+        const reminders = dbModule.getDueReminders() as any[]
+        expect(reminders).toHaveLength(1)
+        expect(reminders[0].message).toBe('Daily reminder')
+        expect(reminders[0].recurrence_interval_hours).toBe(24)
+        expect(reminders[0].end_date).not.toBeNull()
+      })
+
+      it('should create a one-time reminder when no recurrence specified', () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'One-time reminder'
+        })
+        
+        const reminders = dbModule.getDueReminders() as any[]
+        expect(reminders).toHaveLength(1)
+        expect(reminders[0].recurrence_interval_hours).toBeNull()
+        expect(reminders[0].end_date).toBeNull()
+      })
+
+      it('should support legacy function signature for backwards compatibility', () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        // Old signature: createReminder(subscriptionId, scheduledTime, message)
+        dbModule.createReminder(subscriptionId, getPastTime(), 'Legacy message')
+        
+        const reminders = dbModule.getDueReminders() as any[]
+        expect(reminders).toHaveLength(1)
+        expect(reminders[0].message).toBe('Legacy message')
+        expect(reminders[0].recurrence_interval_hours).toBeNull()
+      })
+    })
+
+    describe('updateReminderScheduledTime', () => {
+      it('should update the scheduled time of a reminder', () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        const reminderId = dbModule.createReminder(subscriptionId, getPastTime())
+        
+        const newTime = new Date(Date.now() + 24 * 60 * 60 * 1000) // Tomorrow
+        dbModule.updateReminderScheduledTime(reminderId, newTime.toISOString())
+        
+        // Should no longer be in due reminders (it's in the future now)
+        const dueReminders = dbModule.getDueReminders() as any[]
+        expect(dueReminders).toHaveLength(0)
+        
+        // But should still exist in active reminders
+        expect(dbModule.countActiveReminders(subscriptionId)).toBe(1)
+      })
+    })
+
+    describe('dispatcher with recurring reminders', () => {
+      it('should reschedule recurring reminder after sending', async () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 1 week from now
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Daily reminder',
+          recurrenceIntervalHours: 24,
+          endDate: endDate.toISOString()
+        })
+        
+        ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+        await dbModule.dispatchNotifications()
+
+        expect(webpush.sendNotification).toHaveBeenCalledTimes(1)
+        
+        // Reminder should still exist (rescheduled, not deleted)
+        const db = dbModule.getDb()
+        const reminders = db.prepare('SELECT * FROM reminders').all() as any[]
+        expect(reminders).toHaveLength(1)
+        
+        // Scheduled time should be updated to ~24 hours later
+        const newScheduledTime = new Date(reminders[0].scheduled_time.replace(' ', 'T') + 'Z')
+        const expectedTime = new Date(Date.now() + 23 * 60 * 60 * 1000) // roughly 24h from original past time
+        expect(newScheduledTime.getTime()).toBeGreaterThan(Date.now())
+      })
+
+      it('should delete one-time reminder after sending', async () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        dbModule.createReminder(subscriptionId, getPastTime())
+        
+        ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+        await dbModule.dispatchNotifications()
+
+        // One-time reminder should be deleted
+        const db = dbModule.getDb()
+        const reminders = db.prepare('SELECT * FROM reminders').all()
+        expect(reminders).toHaveLength(0)
+      })
+
+      it('should delete recurring reminder when end_date is reached', async () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        // End date is in the past (so next occurrence would be after end date)
+        const endDate = new Date(Date.now() - 1000) // 1 second ago
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Final reminder',
+          recurrenceIntervalHours: 24,
+          endDate: endDate.toISOString()
+        })
+        
+        ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+        await dbModule.dispatchNotifications()
+
+        expect(webpush.sendNotification).toHaveBeenCalledTimes(1)
+        
+        // Reminder should be deleted (end date passed)
+        const db = dbModule.getDb()
+        const reminders = db.prepare('SELECT * FROM reminders').all()
+        expect(reminders).toHaveLength(0)
+      })
+
+      it('should append last notification message when end_date is reached', async () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        // End date is in the past (so this is the last notification)
+        const endDate = new Date(Date.now() - 1000)
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Daily reminder',
+          recurrenceIntervalHours: 24,
+          endDate: endDate.toISOString()
+        })
+        
+        ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+        await dbModule.dispatchNotifications()
+
+        expect(webpush.sendNotification).toHaveBeenCalledWith(
+          expect.any(Object),
+          expect.stringContaining('Letschti Erinnerig')
+        )
+      })
+
+      it('should not append last notification message for regular recurring notifications', async () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        // End date is far in the future
+        const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Daily reminder',
+          recurrenceIntervalHours: 24,
+          endDate: endDate.toISOString()
+        })
+        
+        ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+        await dbModule.dispatchNotifications()
+
+        // Should NOT contain the "last notification" suffix
+        const callArgs = (webpush.sendNotification as Mock).mock.calls[0][1]
+        expect(callArgs).not.toContain('Letschti Erinnerig')
+        expect(callArgs).toContain('Daily reminder')
+      })
+
+      it('should handle multiple recurring reminders with different intervals', async () => {
+        const subscriptionId = dbModule.saveSubscription(
+          'https://push.example.com/test-endpoint',
+          'test-p256dh-key',
+          'test-auth-key'
+        )
+        
+        const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        
+        // Daily reminder
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Daily',
+          recurrenceIntervalHours: 24,
+          endDate: endDate.toISOString()
+        })
+        
+        // Weekly reminder
+        dbModule.createReminder({
+          subscriptionId,
+          scheduledTime: getPastTime(),
+          message: 'Weekly',
+          recurrenceIntervalHours: 168,
+          endDate: endDate.toISOString()
+        })
+        
+        ;(webpush.sendNotification as Mock).mockResolvedValue({})
+
+        await dbModule.dispatchNotifications()
+
+        expect(webpush.sendNotification).toHaveBeenCalledTimes(2)
+        
+        // Both reminders should still exist (rescheduled)
+        const db = dbModule.getDb()
+        const reminders = db.prepare('SELECT * FROM reminders ORDER BY recurrence_interval_hours').all() as any[]
+        expect(reminders).toHaveLength(2)
+        expect(reminders[0].recurrence_interval_hours).toBe(24)
+        expect(reminders[1].recurrence_interval_hours).toBe(168)
+      })
+    })
+
+    describe('schema migration', () => {
+      it('should have recurrence_interval_hours column', () => {
+        const db = dbModule.getDb()
+        const columns = db.prepare(`PRAGMA table_info(reminders)`).all() as any[]
+        const hasColumn = columns.some((col: any) => col.name === 'recurrence_interval_hours')
+        expect(hasColumn).toBe(true)
+      })
+
+      it('should have end_date column', () => {
+        const db = dbModule.getDb()
+        const columns = db.prepare(`PRAGMA table_info(reminders)`).all() as any[]
+        const hasColumn = columns.some((col: any) => col.name === 'end_date')
+        expect(hasColumn).toBe(true)
+      })
+    })
+  })
 })
