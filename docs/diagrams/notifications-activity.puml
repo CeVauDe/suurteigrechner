@@ -24,10 +24,11 @@ if (Unterstützt Browser Push Benachrichtigungen?) then (Ja)
   
   while (Erinnerung ist fällig?) is (Nein)
     :Warten bis zum nächsten Check;
-  endwhile (yes)
+  endwhile (Ja)
 
   if (Ist letzte wiederkehrende Erinnerung?) then (Ja)
     :Nutzer auf letzte Erinnerung hinweisen;
+  else (Nein)
   endif
     
   :Push Benachrichtigung an Nutzer senden;
