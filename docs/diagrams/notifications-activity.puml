@@ -1,0 +1,60 @@
+@startuml notifications-activity
+title Push Notification Aktivitätsdiagramm
+
+start
+
+:Nutzer konfiguriert Erinnerung;
+
+if (Unterstützt Browser Push Benachrichtigungen?) then (Ja)
+  if (Berechtigung schon erteilt?) then (Ja)
+    :Bestehende Subscription holen;
+  else (Nein)
+    :Benachrichtigungsberechtigung anfragen;
+    if (Erlaubt Nutzer Push Benachrichtigungen?) then (Ja)
+      :Push Subscription erstellen;
+    else (Nein)
+      :Fehlermeldung anzeigen;
+      stop
+    endif
+  endif
+  
+  :Subscription und Erinnerung an API senden;
+  
+  :API speichert Erinnerung in DB;
+  
+  while (Erinnerung ist fällig?) is (Nein)
+    :Warten bis zum nächsten Check;
+  endwhile (yes)
+
+  if (Ist letzte wiederkehrende Erinnerung?) then (Ja)
+    :Nutzer auf letzte Erinnerung hinweisen;
+  endif
+    
+  :Push Benachrichtigung an Nutzer senden;
+  
+  if (Ist Benachrichtigung wiederkehrend?) then (Ja)
+    if (War es die letzte?) then (Ja)
+      :Erinnerungszeitstempel updaten;
+    else (Nein)
+      :Benachrichtigung aus DB löschen;
+    endif
+  else (Nein)
+    :Benachrichtigung aus DB löschen;
+  endif
+
+  :Nutzer bekommt Benachrichtigung angezeigt;
+  
+  if (Klickt nutzer auf Notification?) then (Ja)
+    :App öffnen;
+  else (Nein)
+    :Benachrichtigung wird verworfen;
+  endif
+  
+else (Nein)
+  :Fehlermeldung nicht unterstützer Browser zeigen;
+  stop
+endif
+
+stop
+
+@enduml
