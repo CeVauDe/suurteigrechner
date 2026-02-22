@@ -6,9 +6,7 @@ import NumberField from '../components/NumberField';
 import type { CalculaterState } from '../lib/types';
 import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrationCase, setFieldValueCase } from '../lib/reducerHelpers';
 import { createInitialCalculatorState } from '../lib/calculatorState';
-import { getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
-import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, overwriteSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
-import { getCalculatorSaveUiState } from '../lib/calculatorSaveUiState';
+import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
 
 const Calculator = () => {
   const initialCalculatorState = createInitialCalculatorState();
@@ -50,8 +48,6 @@ const Calculator = () => {
   }
 
   const [fields, dispatch] = React.useReducer(reducer, initialCalculatorState);
-  const [renameName, setRenameName] = React.useState('');
-  const [selectedSaveId, setSelectedSaveId] = React.useState('');
   const [saveStatus, setSaveStatus] = React.useState('');
   const [savedCalculations, setSavedCalculations] = React.useState<ReturnType<typeof listSavedCalculations>>([]);
   const [isMounted, setIsMounted] = React.useState(false);
@@ -76,92 +72,48 @@ const Calculator = () => {
     return `Total Teigmasse ${totalDough} g @ ${hydration}% Hydration`;
   }
 
+  const formatSavedDateTime = (isoDateTime: string): string => {
+    const date = new Date(isoDateTime);
+    if (Number.isNaN(date.getTime())) return isoDateTime;
+    return date.toLocaleString('de-CH', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   const handleSave = () => {
     const normalizedName = getDefaultSaveName(fields);
 
     const savedEntry = saveCalculation(normalizedName, fields);
     const refreshed = listSavedCalculations();
     setSavedCalculations(refreshed);
-    setSelectedSaveId(savedEntry.id);
-    setRenameName(savedEntry.name);
     setSaveStatus(`Gspeicheret: ${savedEntry.name}`);
   }
 
-  const handleLoad = () => {
-    if (!selectedSaveId) {
-      setSaveStatus('Bitte zuerst en Speicherstand ussueche.');
-      return;
-    }
-    const loaded = loadSavedCalculation(selectedSaveId);
+  const handleLoad = (id: string) => {
+    const loaded = loadSavedCalculation(id);
     if (!loaded) {
       setSaveStatus('Speicherstand nöd gfunde.');
       return;
     }
     dispatch({ type: 'RESTORE_STATE', state: loaded });
-    const selected = savedCalculations.find((entry) => entry.id === selectedSaveId);
+    const selected = savedCalculations.find((entry) => entry.id === id);
     setSaveStatus(selected ? `Glade: ${selected.name}` : 'Rechnig glade.');
   }
 
-  const handleOverwrite = () => {
-    if (!selectedSaveId) {
-      setSaveStatus('Bitte en Speicherstand zum Überschriibe ussueche.');
-      return;
-    }
-    const overwritten = overwriteSavedCalculation(selectedSaveId, fields);
-    if (!overwritten) {
-      setSaveStatus('Überschriibe nöd möglich.');
-      return;
-    }
-    const refreshed = listSavedCalculations();
-    setSavedCalculations(refreshed);
-    setSaveStatus(`Überschriebe: ${overwritten.name}`);
-  }
-
-  const handleRename = () => {
-    if (!selectedSaveId) {
-      setSaveStatus('Bitte en Speicherstand zum Umbenenne ussueche.');
-      return;
-    }
-
-    const normalizedName = getNormalizedSaveName(renameName);
-    if (!normalizedName) {
-      setSaveStatus('Bitte en gültige neue Name ii.');
-      return;
-    }
-
-    const renamed = renameSavedCalculation(selectedSaveId, normalizedName);
-    if (!renamed) {
-      setSaveStatus('Umbenenne nöd möglich (Name existiert evtl. scho).');
-      return;
-    }
-
-    const refreshed = listSavedCalculations();
-    setSavedCalculations(refreshed);
-    setSaveStatus(`Umbenennt uf: ${normalizedName}`);
-  }
-
-  const handleDelete = () => {
-    if (!selectedSaveId) {
-      setSaveStatus('Bitte en Speicherstand zum Lösche ussueche.');
-      return;
-    }
-    const deleted = deleteSavedCalculation(selectedSaveId);
+  const handleDelete = (id: string) => {
+    const deleted = deleteSavedCalculation(id);
     if (!deleted) {
       setSaveStatus('Lösche nöd möglich.');
       return;
     }
     const refreshed = listSavedCalculations();
     setSavedCalculations(refreshed);
-    setSelectedSaveId('');
-    setRenameName('');
     setSaveStatus('Speicherstand glöscht.');
   }
-
-  const saveUiState = getCalculatorSaveUiState({
-    saveName: 'save',
-    renameName,
-    selectedSaveId,
-  });
 
 
 
@@ -229,49 +181,22 @@ const Calculator = () => {
             <div className="d-grid mb-3">
               <button type="button" className="btn btn-primary" onClick={handleSave}>Aktuelli Rechnig speichere</button>
             </div>
-            <div className="row g-2">
-              <div className="col">
-                <select
-                  className="form-select"
-                  value={selectedSaveId}
-                  onChange={(e) => {
-                    const nextId = e.target.value;
-                    setSelectedSaveId(nextId);
-                    const selected = savedCalculations.find((entry) => entry.id === nextId);
-                    setRenameName(selected?.name ?? '');
-                  }}
-                >
-                  <option value="">Bitte wäle</option>
-                  {savedCalculations.map((entry) => (
-                    <option key={entry.id} value={entry.id}>{entry.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-auto">
-                <button type="button" className="btn btn-outline-primary" onClick={handleLoad} disabled={!saveUiState.canLoad}>Lade</button>
-              </div>
-            </div>
-            <div className="row g-2 mt-2">
-              <div className="col-auto">
-                <button type="button" className="btn btn-outline-primary" onClick={handleOverwrite} disabled={!saveUiState.canOverwrite}>Überschriibe</button>
-              </div>
-              <div className="col-auto">
-                <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={!saveUiState.canDelete}>Lösche</button>
-              </div>
-            </div>
-            <div className="row g-2 mt-2">
-              <div className="col">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={renameName}
-                  onChange={(e) => setRenameName(e.target.value)}
-                  placeholder="Neue Name"
-                />
-              </div>
-              <div className="col-auto">
-                <button type="button" className="btn btn-outline-primary" onClick={handleRename} disabled={!saveUiState.canRename}>Umbenenne</button>
-              </div>
+            <div className="d-flex flex-column gap-2">
+              {savedCalculations.length === 0 && (
+                <p className="mb-0 text-start text-muted">No kei Rechnige gspeicheret.</p>
+              )}
+              {savedCalculations.map((entry) => (
+                <div key={entry.id} className="border border-primary rounded-3 bg-light p-2">
+                  <div className="d-flex justify-content-between align-items-start gap-2">
+                    <div className="flex-grow-1 text-center fw-semibold">{entry.name}</div>
+                    <small className="text-muted text-nowrap">{formatSavedDateTime(entry.updatedAt)}</small>
+                  </div>
+                  <div className="d-flex justify-content-end gap-2 mt-2">
+                    <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => handleLoad(entry.id)}>Lade</button>
+                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(entry.id)}>Lösche</button>
+                  </div>
+                </div>
+              ))}
             </div>
             {saveStatus && <p className="mt-3 mb-0 text-start">{saveStatus}</p>}
           </div>
