@@ -3,6 +3,7 @@ import { createInitialCalculatorState } from './calculatorState';
 import {
   saveCalculation,
   listSavedCalculations,
+  listSavedCalculationsWithStatus,
   loadSavedCalculation,
   overwriteSavedCalculation,
   renameSavedCalculation,
@@ -115,12 +116,27 @@ describe('calculatorSaves', () => {
     expect(listSavedCalculations().find((x) => x.id === first.id)?.name).toBe('First');
   });
 
+  it('rejects empty save names', () => {
+    const state = createInitialCalculatorState();
+    expect(() => saveCalculation('   ', state)).toThrow('Name is required');
+  });
+
+  it('rejects empty rename target', () => {
+    const state = createInitialCalculatorState();
+    const saved = saveCalculation('Stable', state);
+
+    const renamed = renameSavedCalculation(saved.id, '   ');
+    expect(renamed).toBe(false);
+  });
+
   it('recovers from corrupted storage payload', () => {
     localStorage.setItem('suurteig_saved_calculations', '{invalid json');
 
+    const status = listSavedCalculationsWithStatus();
     const list = listSavedCalculations();
 
     expect(list).toEqual([]);
     expect(localStorage.getItem('suurteig_saved_calculations')).toBe('[]');
+    expect(status.recoveredFromCorruption).toBe(true);
   });
 });
