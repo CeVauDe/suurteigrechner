@@ -8,9 +8,9 @@ describe('toSnapshot', () => {
     const snapshot = toSnapshot(state);
 
     expect(snapshot.version).toBe(CALCULATOR_SNAPSHOT_VERSION);
-    expect(snapshot.payload.flour.value).toBe(1000);
-    expect(snapshot.payload.water.value).toBe(670);
-    expect(snapshot.payload.starter.value).toBe(250);
+    expect(snapshot.payload.flour.value).toBe(515);
+    expect(snapshot.payload.water.value).toBe(345);
+    expect(snapshot.payload.starter.value).toBe(130);
     expect(snapshot.payload.counter).toBe(0);
 
     expect('calculate' in (snapshot.payload.flour as Record<string, unknown>)).toBe(false);
