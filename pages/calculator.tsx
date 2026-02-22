@@ -6,15 +6,11 @@ import NumberField from '../components/NumberField';
 import type { CalculaterState } from '../lib/types';
 import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrationCase, setFieldValueCase } from '../lib/reducerHelpers';
 import { createInitialCalculatorState } from '../lib/calculatorState';
-import { useRouter } from 'next/router';
 import { hasDuplicateSaveName, getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
 import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, overwriteSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
 import { getCalculatorSaveUiState } from '../lib/calculatorSaveUiState';
 
 const Calculator = () => {
-  const router = useRouter();
-  const isDedicatedCalculatorPage = router.pathname === '/calculator';
-
   const initialCalculatorState = createInitialCalculatorState();
 
   type Action =
@@ -61,13 +57,12 @@ const Calculator = () => {
   const [savedCalculations, setSavedCalculations] = React.useState<ReturnType<typeof listSavedCalculations>>([]);
 
   React.useEffect(() => {
-    if (!isDedicatedCalculatorPage) return;
     const result = listSavedCalculationsWithStatus();
     setSavedCalculations(result.entries);
     if (result.recoveredFromCorruption) {
       setSaveStatus('Ungültigi Speicherdatei isch zrüggsetzt worde.');
     }
-  }, [isDedicatedCalculatorPage]);
+  }, []);
 
   const reset = () => dispatch({ type: 'RESET' });
 
@@ -223,74 +218,72 @@ const Calculator = () => {
             <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled />
           </div>
         </div>
-        {isDedicatedCalculatorPage && (
-          <div className="card mb-3">
-            <div className="card-header btn-primary">
-              Gspeichereti Rechnige
-            </div>
-            <div className="card-body">
-              <div className="row g-2 mb-3">
-                <div className="col">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={saveName}
-                    onChange={(e) => setSaveName(e.target.value)}
-                    placeholder="Name für d'Rechnig"
-                  />
-                </div>
-                <div className="col-auto">
-                  <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!saveUiState.canSave}>Spichere</button>
-                </div>
-              </div>
-              <div className="row g-2">
-                <div className="col">
-                  <select
-                    className="form-select"
-                    value={selectedSaveId}
-                    onChange={(e) => {
-                      const nextId = e.target.value;
-                      setSelectedSaveId(nextId);
-                      const selected = savedCalculations.find((entry) => entry.id === nextId);
-                      setRenameName(selected?.name ?? '');
-                    }}
-                  >
-                    <option value="">Bitte wäle</option>
-                    {savedCalculations.map((entry) => (
-                      <option key={entry.id} value={entry.id}>{entry.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-auto">
-                  <button type="button" className="btn btn-outline-primary" onClick={handleLoad} disabled={!saveUiState.canLoad}>Lade</button>
-                </div>
-              </div>
-              <div className="row g-2 mt-2">
-                <div className="col-auto">
-                  <button type="button" className="btn btn-outline-primary" onClick={handleOverwrite} disabled={!saveUiState.canOverwrite}>Überschriibe</button>
-                </div>
-                <div className="col-auto">
-                  <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={!saveUiState.canDelete}>Lösche</button>
-                </div>
-              </div>
-              <div className="row g-2 mt-2">
-                <div className="col">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={renameName}
-                    onChange={(e) => setRenameName(e.target.value)}
-                    placeholder="Neue Name"
-                  />
-                </div>
-                <div className="col-auto">
-                  <button type="button" className="btn btn-outline-primary" onClick={handleRename} disabled={!saveUiState.canRename}>Umbenenne</button>
-                </div>
-              </div>
-              {saveStatus && <p className="mt-3 mb-0 text-start">{saveStatus}</p>}
-            </div>
+        <div className="card mb-3">
+          <div className="card-header btn-primary">
+            Gspeichereti Rechnige
           </div>
-        )}
+          <div className="card-body">
+            <div className="row g-2 mb-3">
+              <div className="col">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="Name für d'Rechnig"
+                />
+              </div>
+              <div className="col-auto">
+                <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!saveUiState.canSave}>Spichere</button>
+              </div>
+            </div>
+            <div className="row g-2">
+              <div className="col">
+                <select
+                  className="form-select"
+                  value={selectedSaveId}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    setSelectedSaveId(nextId);
+                    const selected = savedCalculations.find((entry) => entry.id === nextId);
+                    setRenameName(selected?.name ?? '');
+                  }}
+                >
+                  <option value="">Bitte wäle</option>
+                  {savedCalculations.map((entry) => (
+                    <option key={entry.id} value={entry.id}>{entry.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-auto">
+                <button type="button" className="btn btn-outline-primary" onClick={handleLoad} disabled={!saveUiState.canLoad}>Lade</button>
+              </div>
+            </div>
+            <div className="row g-2 mt-2">
+              <div className="col-auto">
+                <button type="button" className="btn btn-outline-primary" onClick={handleOverwrite} disabled={!saveUiState.canOverwrite}>Überschriibe</button>
+              </div>
+              <div className="col-auto">
+                <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={!saveUiState.canDelete}>Lösche</button>
+              </div>
+            </div>
+            <div className="row g-2 mt-2">
+              <div className="col">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={renameName}
+                  onChange={(e) => setRenameName(e.target.value)}
+                  placeholder="Neue Name"
+                />
+              </div>
+              <div className="col-auto">
+                <button type="button" className="btn btn-outline-primary" onClick={handleRename} disabled={!saveUiState.canRename}>Umbenenne</button>
+              </div>
+            </div>
+            {saveStatus && <p className="mt-3 mb-0 text-start">{saveStatus}</p>}
+          </div>
+        </div>
         <button type="button" className='btn btn-primary' onClick={reset}>alles zrüggsetze</button>
       </form>
 

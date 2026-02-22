@@ -7,7 +7,7 @@ A small web application for Railway deployment that stores visitor entries in an
 - **Next.js + TypeScript** — server-side rendering and API routes
 - **Bootstrap CSS** — modern styling
 - **SQLite persistence** — simple file-based database with `better-sqlite3`
-- **Calculator save slots (localStorage)** — named save/load/overwrite/rename/delete on `/calculator`
+- **Calculator save slots (localStorage)** — named save/load/overwrite/rename/delete on `/` and `/calculator`
 - **Docker + docker-compose** — production-ready containerized deployment with persistent volumes
 - **Secure defaults** — runs as non-root user, minimal Alpine base image
 
@@ -148,10 +148,10 @@ The dev server will create a local SQLite database at `./data/db.sqlite`.
 
 ### Calculator local saves
 
-- Save management is available on the dedicated calculator page at `/calculator`.
+- Save management is available on both calculator routes: `/` and `/calculator`.
 - Saved entries are browser-local (`localStorage`) under key `suurteig_saved_calculations`.
 - Supported actions: save new, load, overwrite selected, rename, delete.
-- The home page calculator (`/`) intentionally does not show save controls.
+- Saves are shared between both routes because both use the same browser localStorage key.
 - Saved snapshots are versioned and store serializable calculator data only (runtime functions are reattached on load).
 - Corrupted stored JSON is automatically reset to an empty list, with an inline status message in the UI.
 
