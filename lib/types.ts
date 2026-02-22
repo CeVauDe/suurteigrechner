@@ -13,6 +13,23 @@ export type Ingredient = NumberFieldState & {
   calculate?: (state: CalculaterState, starterHydration: number) => number;
 }
 
+export type SerializableIngredient = Omit<Ingredient, 'calculate'>;
+
+export type SerializableCalculaterState = {
+  flour: SerializableIngredient;
+  water: SerializableIngredient;
+  starter: SerializableIngredient;
+  hydration: NumberFieldState;
+  totalDough: NumberFieldState;
+  starterHydration: NumberFieldState;
+  counter: number;
+}
+
+export type CalculatorSnapshot = {
+  version: number;
+  payload: SerializableCalculaterState;
+}
+
 export type CalculaterState = {
   flour: Ingredient;
   water: Ingredient;
