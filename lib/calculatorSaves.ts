@@ -15,6 +15,11 @@ type SaveOptions = {
   overwrite?: boolean;
 };
 
+export type SavedCalculationsReadResult = {
+  entries: SavedCalculation[];
+  recoveredFromCorruption: boolean;
+};
+
 function hasWindow(): boolean {
   return typeof window !== 'undefined';
 }
@@ -24,23 +29,27 @@ function persist(items: SavedCalculation[]) {
   localStorage.setItem(SAVED_CALCULATIONS_KEY, JSON.stringify(items));
 }
 
-function parseStored(): SavedCalculation[] {
-  if (!hasWindow()) return [];
+function parseStored(): SavedCalculationsReadResult {
+  if (!hasWindow()) {
+    return { entries: [], recoveredFromCorruption: false };
+  }
 
   const raw = localStorage.getItem(SAVED_CALCULATIONS_KEY);
-  if (!raw) return [];
+  if (!raw) {
+    return { entries: [], recoveredFromCorruption: false };
+  }
 
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       persist([]);
-      return [];
+      return { entries: [], recoveredFromCorruption: true };
     }
 
-    return parsed as SavedCalculation[];
+    return { entries: parsed as SavedCalculation[], recoveredFromCorruption: false };
   } catch {
     persist([]);
-    return [];
+    return { entries: [], recoveredFromCorruption: true };
   }
 }
 
@@ -49,14 +58,21 @@ function normalizedName(name: string): string {
 }
 
 export function listSavedCalculations(): SavedCalculation[] {
+  return parseStored().entries;
+}
+
+export function listSavedCalculationsWithStatus(): SavedCalculationsReadResult {
   return parseStored();
 }
 
 export function saveCalculation(name: string, state: CalculaterState, options: SaveOptions = {}): SavedCalculation {
   const trimmedName = name.trim();
+  if (!trimmedName) {
+    throw new Error('Name is required');
+  }
   const now = new Date().toISOString();
   const snapshot = toSnapshot(state);
-  const existing = parseStored();
+  const existing = parseStored().entries;
   const existingIndex = existing.findIndex((entry) => normalizedName(entry.name) === normalizedName(trimmedName));
 
   if (existingIndex >= 0 && options.overwrite) {
@@ -85,14 +101,14 @@ export function saveCalculation(name: string, state: CalculaterState, options: S
 }
 
 export function loadSavedCalculation(id: string): CalculaterState | null {
-  const existing = parseStored();
+  const existing = parseStored().entries;
   const found = existing.find((entry) => entry.id === id);
   if (!found) return null;
   return fromSnapshot(found.snapshot);
 }
 
 export function overwriteSavedCalculation(id: string, state: CalculaterState): SavedCalculation | null {
-  const existing = parseStored();
+  const existing = parseStored().entries;
   const index = existing.findIndex((entry) => entry.id === id);
   if (index < 0) return null;
 
@@ -110,7 +126,9 @@ export function overwriteSavedCalculation(id: string, state: CalculaterState): S
 
 export function renameSavedCalculation(id: string, newName: string): boolean {
   const trimmedName = newName.trim();
-  const existing = parseStored();
+  if (!trimmedName) return false;
+
+  const existing = parseStored().entries;
   const index = existing.findIndex((entry) => entry.id === id);
   if (index < 0) return false;
 
@@ -127,7 +145,7 @@ export function renameSavedCalculation(id: string, newName: string): boolean {
 }
 
 export function deleteSavedCalculation(id: string): boolean {
-  const existing = parseStored();
+  const existing = parseStored().entries;
   const next = existing.filter((entry) => entry.id !== id);
   if (next.length === existing.length) return false;
   persist(next);

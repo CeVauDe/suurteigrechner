@@ -8,7 +8,8 @@ import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrati
 import { createInitialCalculatorState } from '../lib/calculatorState';
 import { useRouter } from 'next/router';
 import { hasDuplicateSaveName, getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
-import { deleteSavedCalculation, listSavedCalculations, loadSavedCalculation, overwriteSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
+import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, overwriteSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
+import { getCalculatorSaveUiState } from '../lib/calculatorSaveUiState';
 
 const Calculator = () => {
   const router = useRouter();
@@ -61,7 +62,11 @@ const Calculator = () => {
 
   React.useEffect(() => {
     if (!isDedicatedCalculatorPage) return;
-    setSavedCalculations(listSavedCalculations());
+    const result = listSavedCalculationsWithStatus();
+    setSavedCalculations(result.entries);
+    if (result.recoveredFromCorruption) {
+      setSaveStatus('Ungültigi Speicherdatei isch zrüggsetzt worde.');
+    }
   }, [isDedicatedCalculatorPage]);
 
   const reset = () => dispatch({ type: 'RESET' });
@@ -158,6 +163,12 @@ const Calculator = () => {
     setSaveStatus('Speicherstand glöscht.');
   }
 
+  const saveUiState = getCalculatorSaveUiState({
+    saveName,
+    renameName,
+    selectedSaveId,
+  });
+
 
 
 
@@ -229,7 +240,7 @@ const Calculator = () => {
                   />
                 </div>
                 <div className="col-auto">
-                  <button type="button" className="btn btn-primary" onClick={handleSave}>Spichere</button>
+                  <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!saveUiState.canSave}>Spichere</button>
                 </div>
               </div>
               <div className="row g-2">
@@ -251,15 +262,15 @@ const Calculator = () => {
                   </select>
                 </div>
                 <div className="col-auto">
-                  <button type="button" className="btn btn-outline-primary" onClick={handleLoad}>Lade</button>
+                  <button type="button" className="btn btn-outline-primary" onClick={handleLoad} disabled={!saveUiState.canLoad}>Lade</button>
                 </div>
               </div>
               <div className="row g-2 mt-2">
                 <div className="col-auto">
-                  <button type="button" className="btn btn-outline-primary" onClick={handleOverwrite}>Überschriibe</button>
+                  <button type="button" className="btn btn-outline-primary" onClick={handleOverwrite} disabled={!saveUiState.canOverwrite}>Überschriibe</button>
                 </div>
                 <div className="col-auto">
-                  <button type="button" className="btn btn-outline-danger" onClick={handleDelete}>Lösche</button>
+                  <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={!saveUiState.canDelete}>Lösche</button>
                 </div>
               </div>
               <div className="row g-2 mt-2">
@@ -273,7 +284,7 @@ const Calculator = () => {
                   />
                 </div>
                 <div className="col-auto">
-                  <button type="button" className="btn btn-outline-primary" onClick={handleRename}>Umbenenne</button>
+                  <button type="button" className="btn btn-outline-primary" onClick={handleRename} disabled={!saveUiState.canRename}>Umbenenne</button>
                 </div>
               </div>
               {saveStatus && <p className="mt-3 mb-0 text-start">{saveStatus}</p>}
