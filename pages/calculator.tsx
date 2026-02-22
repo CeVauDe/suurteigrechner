@@ -6,7 +6,7 @@ import NumberField from '../components/NumberField';
 import type { CalculaterState } from '../lib/types';
 import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrationCase, setFieldValueCase } from '../lib/reducerHelpers';
 import { createInitialCalculatorState } from '../lib/calculatorState';
-import { hasDuplicateSaveName, getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
+import { getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
 import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, overwriteSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
 import { getCalculatorSaveUiState } from '../lib/calculatorSaveUiState';
 
@@ -50,11 +50,15 @@ const Calculator = () => {
   }
 
   const [fields, dispatch] = React.useReducer(reducer, initialCalculatorState);
-  const [saveName, setSaveName] = React.useState('');
   const [renameName, setRenameName] = React.useState('');
   const [selectedSaveId, setSelectedSaveId] = React.useState('');
   const [saveStatus, setSaveStatus] = React.useState('');
   const [savedCalculations, setSavedCalculations] = React.useState<ReturnType<typeof listSavedCalculations>>([]);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   React.useEffect(() => {
     const result = listSavedCalculationsWithStatus();
@@ -66,23 +70,18 @@ const Calculator = () => {
 
   const reset = () => dispatch({ type: 'RESET' });
 
-  const handleSave = () => {
-    const normalizedName = getNormalizedSaveName(saveName);
-    if (!normalizedName) {
-      setSaveStatus('Bitte gib en Name ii.');
-      return;
-    }
+  const getDefaultSaveName = (state: CalculaterState): string => {
+    const totalDough = Math.round(state.totalDough.value);
+    const hydration = Math.round(state.hydration.value);
+    return `Total Teigmasse ${totalDough} g @ ${hydration}% Hydration`;
+  }
 
-    const existingNames = savedCalculations.map((entry) => entry.name);
-    if (hasDuplicateSaveName(normalizedName, existingNames)) {
-      setSaveStatus('Name git scho. Bitte überschriibe oder andere Name.');
-      return;
-    }
+  const handleSave = () => {
+    const normalizedName = getDefaultSaveName(fields);
 
     const savedEntry = saveCalculation(normalizedName, fields);
     const refreshed = listSavedCalculations();
     setSavedCalculations(refreshed);
-    setSaveName('');
     setSelectedSaveId(savedEntry.id);
     setRenameName(savedEntry.name);
     setSaveStatus(`Gspeicheret: ${savedEntry.name}`);
@@ -159,7 +158,7 @@ const Calculator = () => {
   }
 
   const saveUiState = getCalculatorSaveUiState({
-    saveName,
+    saveName: 'save',
     renameName,
     selectedSaveId,
   });
@@ -187,6 +186,10 @@ const Calculator = () => {
     const fieldKey = (field as keyof CalculaterState);
     dispatch({ type: 'SET_FIELD_VALUE', field: fieldKey, value: value });
   };
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <>
@@ -223,19 +226,8 @@ const Calculator = () => {
             Gspeichereti Rechnige
           </div>
           <div className="card-body">
-            <div className="row g-2 mb-3">
-              <div className="col">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={saveName}
-                  onChange={(e) => setSaveName(e.target.value)}
-                  placeholder="Name für d'Rechnig"
-                />
-              </div>
-              <div className="col-auto">
-                <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!saveUiState.canSave}>Spichere</button>
-              </div>
+            <div className="d-grid mb-3">
+              <button type="button" className="btn btn-primary" onClick={handleSave}>Aktuelli Rechnig speichere</button>
             </div>
             <div className="row g-2">
               <div className="col">
