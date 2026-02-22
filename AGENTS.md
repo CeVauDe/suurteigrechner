@@ -50,6 +50,7 @@ The calculator handles the relationship between:
 - **Styling**: Prefer Bootstrap classes for layout and SCSS for custom components.
 - **PWA**: Ensure any new assets are correctly cached in the service worker if necessary.
 - **Testing**: Run tests with `npm run test:run`. Changes to `lib/db.ts` require corresponding tests in `lib/db.test.ts` and must pass before committing.
+- **Build Validation**: After each implementation, run `npm run build` and fix any build errors before finishing.
 
 ## Testing Requirements
 - **Calculator save modules** (`lib/calculatorState.ts`, `lib/calculatorSnapshot.ts`, `lib/calculatorSaves.ts`, `lib/calculatorSaveHelpers.ts`, `lib/calculatorSaveUiState.ts`):
