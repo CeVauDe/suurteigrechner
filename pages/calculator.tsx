@@ -58,7 +58,6 @@ const Calculator = () => {
   }
 
   const [fields, dispatch] = React.useReducer(reducer, initialCalculatorState);
-  const [saveStatus, setSaveStatus] = React.useState('');
   const [savedCalculations, setSavedCalculations] = React.useState<ReturnType<typeof listSavedCalculations>>([]);
   const [editingSaveId, setEditingSaveId] = React.useState('');
   const [draftNamesById, setDraftNamesById] = React.useState<Record<string, string>>({});
@@ -72,9 +71,6 @@ const Calculator = () => {
     const result = listSavedCalculationsWithStatus();
     const sortedEntries = sortSavedCalculationsNewestFirst(result.entries);
     setSavedCalculations(sortedEntries);
-    if (result.recoveredFromCorruption) {
-      setSaveStatus('Ungültigi Speicherdatei isch zrüggsetzt worde.');
-    }
     const initialDrafts: Record<string, string> = {};
     for (const entry of sortedEntries) {
       initialDrafts[entry.id] = entry.name;
@@ -87,7 +83,7 @@ const Calculator = () => {
   const getDefaultSaveName = (state: CalculaterState): string => {
     const totalDough = Math.round(state.totalDough.value);
     const hydration = Math.round(state.hydration.value);
-    return `Brot ${totalDough} g @ ${hydration}% Hydration`;
+    return `Brot ${totalDough} g @ ${hydration}%`;
   }
 
   const formatSavedDateTime = (isoDateTime: string): { date: string; time: string } => {
@@ -135,26 +131,22 @@ const Calculator = () => {
     const refreshed = listSavedCalculations();
     setSavedCalculations(sortSavedCalculationsNewestFirst(refreshed));
     setDraftNamesById((previous) => ({ ...previous, [savedEntry.id]: savedEntry.name }));
-    setSaveStatus(`Gspeicheret: ${savedEntry.name}`);
   }
 
   const handleRenameSave = (id: string) => {
     const current = savedCalculations.find((entry) => entry.id === id);
     if (!current) {
-      setSaveStatus('Speicherstand nöd gfunde.');
       return;
     }
 
     const draftName = draftNamesById[id] ?? current.name;
     const normalizedName = getNormalizedSaveName(draftName);
     if (!normalizedName) {
-      setSaveStatus('Bitte en gültige Name ii.');
       return;
     }
 
     const renamed = renameSavedCalculation(id, normalizedName);
     if (!renamed) {
-      setSaveStatus('Umbenenne nöd möglich (Name existiert evtl. scho).');
       return;
     }
 
@@ -162,24 +154,19 @@ const Calculator = () => {
     setSavedCalculations(sortSavedCalculationsNewestFirst(refreshed));
     setDraftNamesById((previous) => ({ ...previous, [id]: normalizedName }));
     setEditingSaveId('');
-    setSaveStatus(`Umbenennt uf: ${normalizedName}`);
   }
 
   const handleLoad = (id: string) => {
     const loaded = loadSavedCalculation(id);
     if (!loaded) {
-      setSaveStatus('Speicherstand nöd gfunde.');
       return;
     }
     dispatch({ type: 'RESTORE_STATE', state: loaded });
-    const selected = savedCalculations.find((entry) => entry.id === id);
-    setSaveStatus(selected ? `Glade: ${selected.name}` : 'Rechnig glade.');
   }
 
   const handleDelete = (id: string) => {
     const deleted = deleteSavedCalculation(id);
     if (!deleted) {
-      setSaveStatus('Lösche nöd möglich.');
       return;
     }
     const refreshed = listSavedCalculations();
@@ -192,7 +179,6 @@ const Calculator = () => {
     if (editingSaveId === id) {
       setEditingSaveId('');
     }
-    setSaveStatus('Speicherstand glöscht.');
   }
 
 
@@ -253,20 +239,21 @@ const Calculator = () => {
             <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled />
           </div>
         </div>
+        <div className="d-flex justify-content-center align-items-center gap-2 mb-3">
+          <button type="button" className='btn btn-sm btn-outline-primary' onClick={reset}>alles zrüggsetze</button>
+          <button type="button" className="btn btn-sm btn-primary" onClick={handleSave}>Aktuelli Rechnig speichere</button>
+        </div>
         <div className="card mb-3">
           <div className="card-header btn-primary">
             Gspeichereti Rechnige
           </div>
           <div className="card-body">
-            <div className="d-grid mb-3">
-              <button type="button" className="btn btn-primary" onClick={handleSave}>Aktuelli Rechnig speichere</button>
-            </div>
-            <div className="d-flex flex-column gap-2">
+            <div className="saved-calc-list d-flex flex-column gap-2">
               {savedCalculations.length === 0 && (
                 <p className="mb-0 text-start text-muted">No kei Rechnige gspeicheret.</p>
               )}
               {savedCalculations.map((entry) => (
-                <div key={entry.id} className="border border-primary rounded-3 bg-light p-2">
+                <div key={entry.id} className="saved-calc-box">
                   {(() => {
                     const summary = getSavedSummary(entry.snapshot.payload);
                     const draftName = draftNamesById[entry.id] ?? entry.name;
@@ -275,7 +262,7 @@ const Calculator = () => {
 
                     return (
                       <>
-                  <div className="d-flex justify-content-between align-items-start gap-2">
+                  <div className="saved-calc-header d-flex justify-content-between align-items-start gap-2">
                     <div className="flex-grow-1 text-center fw-semibold">
                       {editingSaveId === entry.id ? (
                         <input
@@ -314,7 +301,7 @@ const Calculator = () => {
                       </span>
                     </small>
                   </div>
-                  <div className="mt-2 small row g-1 text-center">
+                  <div className="saved-calc-summary mt-2 small row g-1 text-center">
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">⚖️ {summary.totalDough}g</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">💧 {summary.hydration}%</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🌾 {summary.flour}g</span></div>
@@ -322,7 +309,7 @@ const Calculator = () => {
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🚰 {summary.water}g</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🧂 {summary.salt}g</span></div>
                   </div>
-                  <div className="d-flex justify-content-end gap-2 mt-2">
+                  <div className="saved-calc-actions d-flex justify-content-end gap-2 mt-2">
                     <button
                       type="button"
                       className="btn btn-sm btn-outline-primary"
@@ -350,10 +337,8 @@ const Calculator = () => {
                 </div>
               ))}
             </div>
-            {saveStatus && <p className="mt-3 mb-0 text-start">{saveStatus}</p>}
           </div>
         </div>
-        <button type="button" className='btn btn-primary' onClick={reset}>alles zrüggsetze</button>
       </form>
 
     </>
