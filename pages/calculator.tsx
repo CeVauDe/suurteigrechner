@@ -63,6 +63,7 @@ const Calculator = () => {
   const [editingSaveId, setEditingSaveId] = React.useState('');
   const [draftNamesById, setDraftNamesById] = React.useState<Record<string, string>>({});
   const [isMounted, setIsMounted] = React.useState(false);
+  const editingNameInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -78,6 +79,14 @@ const Calculator = () => {
     }
     setDraftNamesById(initialDrafts);
   }, []);
+
+  React.useEffect(() => {
+    if (!editingSaveId) return;
+    const currentInput = editingNameInputRef.current;
+    if (!currentInput) return;
+    currentInput.focus();
+    currentInput.select();
+  }, [editingSaveId]);
 
   const reset = () => dispatch({ type: 'RESET' });
 
@@ -267,9 +276,15 @@ const Calculator = () => {
                     <div className="flex-grow-1 text-center fw-semibold">
                       {editingSaveId === entry.id ? (
                         <input
+                          ref={(element) => {
+                            if (editingSaveId === entry.id) {
+                              editingNameInputRef.current = element;
+                            }
+                          }}
                           type="text"
                           className="form-control form-control-sm"
                           value={draftNamesById[entry.id] ?? entry.name}
+                          onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
                             const value = e.target.value;
                             setDraftNamesById((previous) => ({ ...previous, [entry.id]: value }));
