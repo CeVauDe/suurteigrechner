@@ -305,8 +305,8 @@ const Calculator = () => {
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">⚖️ {summary.totalDough}g</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">💧 {summary.hydration}%</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🌾 {summary.flour}g</span></div>
-                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🫙 {summary.starter}g</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🚰 {summary.water}g</span></div>
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🫙 {summary.starter}g</span></div>
                     <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🧂 {summary.salt}g</span></div>
                   </div>
                   <div className="saved-calc-actions d-flex justify-content-end gap-2 mt-2">
