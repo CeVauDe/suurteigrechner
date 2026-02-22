@@ -57,7 +57,7 @@ const Calculator = () => {
   const [renameName, setRenameName] = React.useState('');
   const [selectedSaveId, setSelectedSaveId] = React.useState('');
   const [saveStatus, setSaveStatus] = React.useState('');
-  const [savedCalculations, setSavedCalculations] = React.useState(() => listSavedCalculations());
+  const [savedCalculations, setSavedCalculations] = React.useState<ReturnType<typeof listSavedCalculations>>([]);
 
   React.useEffect(() => {
     if (!isDedicatedCalculatorPage) return;
