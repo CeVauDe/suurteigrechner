@@ -6,7 +6,8 @@ import NumberField from '../components/NumberField';
 import type { CalculaterState } from '../lib/types';
 import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrationCase, setFieldValueCase } from '../lib/reducerHelpers';
 import { createInitialCalculatorState } from '../lib/calculatorState';
-import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
+import { getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
+import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
 
 const Calculator = () => {
   const initialCalculatorState = createInitialCalculatorState();
@@ -50,6 +51,8 @@ const Calculator = () => {
   const [fields, dispatch] = React.useReducer(reducer, initialCalculatorState);
   const [saveStatus, setSaveStatus] = React.useState('');
   const [savedCalculations, setSavedCalculations] = React.useState<ReturnType<typeof listSavedCalculations>>([]);
+  const [editingSaveId, setEditingSaveId] = React.useState('');
+  const [draftNamesById, setDraftNamesById] = React.useState<Record<string, string>>({});
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -62,6 +65,11 @@ const Calculator = () => {
     if (result.recoveredFromCorruption) {
       setSaveStatus('Ungültigi Speicherdatei isch zrüggsetzt worde.');
     }
+    const initialDrafts: Record<string, string> = {};
+    for (const entry of result.entries) {
+      initialDrafts[entry.id] = entry.name;
+    }
+    setDraftNamesById(initialDrafts);
   }, []);
 
   const reset = () => dispatch({ type: 'RESET' });
@@ -90,7 +98,35 @@ const Calculator = () => {
     const savedEntry = saveCalculation(normalizedName, fields);
     const refreshed = listSavedCalculations();
     setSavedCalculations(refreshed);
+    setDraftNamesById((previous) => ({ ...previous, [savedEntry.id]: savedEntry.name }));
     setSaveStatus(`Gspeicheret: ${savedEntry.name}`);
+  }
+
+  const handleRenameSave = (id: string) => {
+    const current = savedCalculations.find((entry) => entry.id === id);
+    if (!current) {
+      setSaveStatus('Speicherstand nöd gfunde.');
+      return;
+    }
+
+    const draftName = draftNamesById[id] ?? current.name;
+    const normalizedName = getNormalizedSaveName(draftName);
+    if (!normalizedName) {
+      setSaveStatus('Bitte en gültige Name ii.');
+      return;
+    }
+
+    const renamed = renameSavedCalculation(id, normalizedName);
+    if (!renamed) {
+      setSaveStatus('Umbenenne nöd möglich (Name existiert evtl. scho).');
+      return;
+    }
+
+    const refreshed = listSavedCalculations();
+    setSavedCalculations(refreshed);
+    setDraftNamesById((previous) => ({ ...previous, [id]: normalizedName }));
+    setEditingSaveId('');
+    setSaveStatus(`Umbenennt uf: ${normalizedName}`);
   }
 
   const handleLoad = (id: string) => {
@@ -112,6 +148,14 @@ const Calculator = () => {
     }
     const refreshed = listSavedCalculations();
     setSavedCalculations(refreshed);
+    setDraftNamesById((previous) => {
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
+    if (editingSaveId === id) {
+      setEditingSaveId('');
+    }
     setSaveStatus('Speicherstand glöscht.');
   }
 
@@ -188,11 +232,54 @@ const Calculator = () => {
               {savedCalculations.map((entry) => (
                 <div key={entry.id} className="border border-primary rounded-3 bg-light p-2">
                   <div className="d-flex justify-content-between align-items-start gap-2">
-                    <div className="flex-grow-1 text-center fw-semibold">{entry.name}</div>
+                    <div className="flex-grow-1 text-center fw-semibold">
+                      {editingSaveId === entry.id ? (
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          value={draftNamesById[entry.id] ?? entry.name}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setDraftNamesById((previous) => ({ ...previous, [entry.id]: value }));
+                          }}
+                          onBlur={() => setEditingSaveId('')}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleRenameSave(entry.id);
+                            }
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 text-decoration-none text-dark fw-semibold"
+                          onClick={() => setEditingSaveId(entry.id)}
+                        >
+                          {draftNamesById[entry.id] ?? entry.name}
+                          <i className="fa-solid fa-pen ms-2" aria-hidden="true"></i>
+                        </button>
+                      )}
+                    </div>
                     <small className="text-muted text-nowrap">{formatSavedDateTime(entry.updatedAt)}</small>
                   </div>
                   <div className="d-flex justify-content-end gap-2 mt-2">
-                    <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => handleLoad(entry.id)}>Lade</button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => {
+                        const draftName = draftNamesById[entry.id] ?? entry.name;
+                        const isDirty = getNormalizedSaveName(draftName) !== getNormalizedSaveName(entry.name);
+                        if (isDirty) {
+                          handleRenameSave(entry.id);
+                          return;
+                        }
+                        handleLoad(entry.id);
+                      }}
+                    >
+                      {getNormalizedSaveName(draftNamesById[entry.id] ?? entry.name) !== getNormalizedSaveName(entry.name) ? 'Spichere' : 'Lade'}
+                    </button>
                     <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(entry.id)}>Lösche</button>
                   </div>
                 </div>
