@@ -6,6 +6,7 @@ import NumberField from '../components/NumberField';
 import type { CalculaterState } from '../lib/types';
 import { toggleConstCase, setHydrationCase, setTotalDoughCase, setStarterHydrationCase, setFieldValueCase } from '../lib/reducerHelpers';
 import { createInitialCalculatorState } from '../lib/calculatorState';
+import { calculateSalt } from '../lib/calc';
 import { getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
 import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
 
@@ -112,7 +113,7 @@ const Calculator = () => {
     const flour = Math.round(state.flour.value);
     const starter = Math.round(state.starter.value);
     const water = Math.round(state.water.value);
-    const salt = Math.round(flour * 0.02);
+    const salt = Math.round(calculateSalt(state, state.starterHydration.value));
 
     return {
       totalDough,
@@ -236,7 +237,7 @@ const Calculator = () => {
             <NumberField label='Mehl' name='flour' state={fields.flour} onChange={handleChange} onChecked={() => toggle("flour")} />
             <NumberField label='Wasser' name='water' state={fields.water} onChange={handleChange} onChecked={() => toggle("water")} />
             <NumberField label='Starter' name='starter' state={fields.starter} onChange={handleChange} onChecked={() => toggle("starter")} />
-            <NumberField label='Salz' name='salt' value={Math.round(fields.flour.value * 0.02)} showCheckbox={false} disabled />
+            <NumberField label='Salz' name='salt' value={Math.round(calculateSalt(fields, fields.starterHydration.value))} showCheckbox={false} disabled />
           </div>
         </div>
         <div className="d-flex justify-content-center align-items-center gap-2 mb-3">

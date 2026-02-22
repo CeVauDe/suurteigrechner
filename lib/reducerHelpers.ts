@@ -61,7 +61,7 @@ export function setHydrationCase(fields: CalculaterState, value: number) {
       break;
     }
   }
-  newFields.totalDough = { ...newFields.totalDough, value: Math.round(calculateTotalDough(newFields)) } as any;
+  newFields.totalDough = { ...newFields.totalDough, value: Math.round(calculateTotalDough(newFields, starterHydration)) } as any;
   return newFields;
 }
 
@@ -69,7 +69,11 @@ export function setTotalDoughCase(fields: CalculaterState, newTotal: number) {
   const starterHydration = fields.starterHydration.value;
   let nextFields = { ...fields } as CalculaterState;
   nextFields.totalDough = { ...nextFields.totalDough, value: newTotal } as any;
-  let totalDivident = 2; // account for salt
+  const sH = starterHydration / 100;
+  const flourDivident = nextFields.flour.divident;
+  const starterFlourDivident = nextFields.starter.divident * (1 / (1 + sH));
+  const saltDivident = 0.02 * (flourDivident + starterFlourDivident);
+  let totalDivident = saltDivident;
   for (let key of IndrigentKeys) {
     const k = key as keyof CalculaterState;
     totalDivident += ((nextFields as any)[k] as Ingredient).divident;
@@ -88,7 +92,13 @@ export function setTotalDoughCase(fields: CalculaterState, newTotal: number) {
 
 export function setStarterHydrationCase(fields: CalculaterState, newStarter: number) {
   const newHydration = Math.round(calculateHydration(fields, newStarter));
-  const nextFields = { ...fields, starterHydration: { ...fields.starterHydration, value: newStarter }, hydration: { ...fields.hydration, value: newHydration } } as CalculaterState;
+  const newTotalDough = Math.round(calculateTotalDough(fields, newStarter));
+  const nextFields = {
+    ...fields,
+    starterHydration: { ...fields.starterHydration, value: newStarter },
+    hydration: { ...fields.hydration, value: newHydration },
+    totalDough: { ...fields.totalDough, value: newTotalDough }
+  } as CalculaterState;
   return nextFields;
 }
 
@@ -121,6 +131,6 @@ export function setFieldValueCase(fields: CalculaterState, field: keyof Calculat
     }
   }
   nextFields.hydration = { ...nextFields.hydration, value: Math.round(calculateHydration(nextFields, starterHydration)) } as any;
-  nextFields.totalDough = { ...nextFields.totalDough, value: Math.round(calculateTotalDough(nextFields)) } as any;
+  nextFields.totalDough = { ...nextFields.totalDough, value: Math.round(calculateTotalDough(nextFields, starterHydration)) } as any;
   return nextFields;
 }
