@@ -186,3 +186,26 @@ body {
 .saved-calc-title-text {
     display: inline-block;
 }
+
+.saved-calc-list {
+    width: 100%;
+}
+
+.saved-calc-box {
+    border: 1px solid $primary;
+    border-radius: 0.75rem;
+    background-color: $light;
+    padding: 0.5rem;
+}
+
+.saved-calc-header {
+    min-height: 1.75rem;
+}
+
+.saved-calc-summary {
+    font-size: 0.82rem;
+}
+
+.saved-calc-actions .btn {
+    min-width: 4.2rem;
+}
