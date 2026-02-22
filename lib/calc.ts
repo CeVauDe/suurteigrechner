@@ -1,13 +1,26 @@
 export interface FieldState { value: number; divident?: number }
 export interface CalcState { flour: FieldState; water: FieldState; starter: FieldState; hydration: FieldState; totalDough?: FieldState }
 
+export const calculateStarterFlour = (state: CalcState, starterHydration: number) => {
+  const sH = starterHydration / 100;
+  return state.starter.value * (1 / (1 + sH));
+}
+
+export const calculateTotalFlour = (state: CalcState, starterHydration: number) => {
+  return state.flour.value + calculateStarterFlour(state, starterHydration);
+}
+
+export const calculateSalt = (state: CalcState, starterHydration: number, saltPercent = 2) => {
+  return calculateTotalFlour(state, starterHydration) * (saltPercent / 100);
+}
+
 export const calculateHydration = (state: CalcState, starterHydration: number) => {
   const sH = starterHydration / 100;
   return (state.water.value + (state.starter.value * (sH / (1 + sH)))) / (state.flour.value + (state.starter.value * (1 / (1 + sH)))) * 100;
 }
 
-export const calculateTotalDough = (state: CalcState) => {
-  return state.flour.value * 1.02 + state.water.value + state.starter.value;
+export const calculateTotalDough = (state: CalcState, starterHydration = 100) => {
+  return state.flour.value + state.water.value + state.starter.value + calculateSalt(state, starterHydration);
 }
 
 export const calculateFlour = (state: CalcState, starterHydration: number) => {
