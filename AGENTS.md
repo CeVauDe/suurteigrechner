@@ -37,7 +37,7 @@ The calculator handles the relationship between:
 - **Total Dough Mass**: The sum of all ingredients (plus a small adjustment factor in some calculations).
 
 ## Calculator Persistence (Local Saves)
-- Save management is available only on the dedicated calculator route (`/calculator`), not on the embedded home calculator (`/`).
+- Save management is available on both calculator routes (`/` and `/calculator`).
 - Local key: `suurteig_saved_calculations`.
 - Snapshot payloads are versioned and serializable; runtime function fields (e.g. `Ingredient.calculate`) are never stored directly.
 - Rehydration must go through `fromSnapshot(...)` so calculate handlers are reattached safely.
