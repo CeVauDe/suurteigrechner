@@ -10,6 +10,15 @@ import { getNormalizedSaveName } from '../lib/calculatorSaveHelpers';
 import { deleteSavedCalculation, listSavedCalculations, listSavedCalculationsWithStatus, loadSavedCalculation, renameSavedCalculation, saveCalculation } from '../lib/calculatorSaves';
 
 const Calculator = () => {
+    const sortSavedCalculationsNewestFirst = (entries: ReturnType<typeof listSavedCalculations>) => {
+      return [...entries].sort((a, b) => {
+        const aTime = new Date(a.updatedAt).getTime();
+        const bTime = new Date(b.updatedAt).getTime();
+        if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0;
+        return bTime - aTime;
+      });
+    }
+
   const initialCalculatorState = createInitialCalculatorState();
 
   type Action =
@@ -61,12 +70,13 @@ const Calculator = () => {
 
   React.useEffect(() => {
     const result = listSavedCalculationsWithStatus();
-    setSavedCalculations(result.entries);
+    const sortedEntries = sortSavedCalculationsNewestFirst(result.entries);
+    setSavedCalculations(sortedEntries);
     if (result.recoveredFromCorruption) {
       setSaveStatus('Ungültigi Speicherdatei isch zrüggsetzt worde.');
     }
     const initialDrafts: Record<string, string> = {};
-    for (const entry of result.entries) {
+    for (const entry of sortedEntries) {
       initialDrafts[entry.id] = entry.name;
     }
     setDraftNamesById(initialDrafts);
@@ -77,19 +87,45 @@ const Calculator = () => {
   const getDefaultSaveName = (state: CalculaterState): string => {
     const totalDough = Math.round(state.totalDough.value);
     const hydration = Math.round(state.hydration.value);
-    return `Total Teigmasse ${totalDough} g @ ${hydration}% Hydration`;
+    return `Brot ${totalDough} g @ ${hydration}% Hydration`;
   }
 
-  const formatSavedDateTime = (isoDateTime: string): string => {
+  const formatSavedDateTime = (isoDateTime: string): { date: string; time: string } => {
     const date = new Date(isoDateTime);
-    if (Number.isNaN(date.getTime())) return isoDateTime;
-    return date.toLocaleString('de-CH', {
+    if (Number.isNaN(date.getTime())) {
+      return { date: isoDateTime, time: '' };
+    }
+
+    const datePart = date.toLocaleDateString('de-CH', {
       day: '2-digit',
       month: '2-digit',
       year: '2-digit',
+    });
+
+    const timePart = date.toLocaleTimeString('de-CH', {
       hour: '2-digit',
       minute: '2-digit'
     });
+
+    return { date: datePart, time: timePart };
+  }
+
+  const getSavedSummary = (state: CalculaterState) => {
+    const totalDough = Math.round(state.totalDough.value);
+    const hydration = Math.round(state.hydration.value);
+    const flour = Math.round(state.flour.value);
+    const starter = Math.round(state.starter.value);
+    const water = Math.round(state.water.value);
+    const salt = Math.round(flour * 0.02);
+
+    return {
+      totalDough,
+      hydration,
+      flour,
+      starter,
+      water,
+      salt,
+    };
   }
 
   const handleSave = () => {
@@ -97,7 +133,7 @@ const Calculator = () => {
 
     const savedEntry = saveCalculation(normalizedName, fields);
     const refreshed = listSavedCalculations();
-    setSavedCalculations(refreshed);
+    setSavedCalculations(sortSavedCalculationsNewestFirst(refreshed));
     setDraftNamesById((previous) => ({ ...previous, [savedEntry.id]: savedEntry.name }));
     setSaveStatus(`Gspeicheret: ${savedEntry.name}`);
   }
@@ -123,7 +159,7 @@ const Calculator = () => {
     }
 
     const refreshed = listSavedCalculations();
-    setSavedCalculations(refreshed);
+    setSavedCalculations(sortSavedCalculationsNewestFirst(refreshed));
     setDraftNamesById((previous) => ({ ...previous, [id]: normalizedName }));
     setEditingSaveId('');
     setSaveStatus(`Umbenennt uf: ${normalizedName}`);
@@ -147,7 +183,7 @@ const Calculator = () => {
       return;
     }
     const refreshed = listSavedCalculations();
-    setSavedCalculations(refreshed);
+    setSavedCalculations(sortSavedCalculationsNewestFirst(refreshed));
     setDraftNamesById((previous) => {
       const next = { ...previous };
       delete next[id];
@@ -231,6 +267,14 @@ const Calculator = () => {
               )}
               {savedCalculations.map((entry) => (
                 <div key={entry.id} className="border border-primary rounded-3 bg-light p-2">
+                  {(() => {
+                    const summary = getSavedSummary(entry.snapshot.payload);
+                    const draftName = draftNamesById[entry.id] ?? entry.name;
+                    const isDirty = getNormalizedSaveName(draftName) !== getNormalizedSaveName(entry.name);
+                    const savedAt = formatSavedDateTime(entry.updatedAt);
+
+                    return (
+                      <>
                   <div className="d-flex justify-content-between align-items-start gap-2">
                     <div className="flex-grow-1 text-center fw-semibold">
                       {editingSaveId === entry.id ? (
@@ -254,23 +298,35 @@ const Calculator = () => {
                       ) : (
                         <button
                           type="button"
-                          className="btn btn-link p-0 text-decoration-none text-dark fw-semibold"
+                          className="btn btn-link p-0 text-decoration-none text-dark fw-semibold saved-calc-title-trigger"
                           onClick={() => setEditingSaveId(entry.id)}
                         >
-                          {draftNamesById[entry.id] ?? entry.name}
-                          <i className="fa-solid fa-pen ms-2" aria-hidden="true"></i>
+                          <span className="saved-calc-title-text">{draftNamesById[entry.id] ?? entry.name}</span>
+                          <i className="fa-solid fa-pen ms-2 saved-calc-edit-icon" aria-hidden="true"></i>
                         </button>
                       )}
                     </div>
-                    <small className="text-muted text-nowrap">{formatSavedDateTime(entry.updatedAt)}</small>
+                    <small className="saved-calc-time">
+                      <span className="saved-calc-time__icon" aria-hidden="true">🕒</span>
+                      <span className="saved-calc-time__text">
+                        <span className="saved-calc-time__date">{savedAt.date}</span>
+                        <span className="saved-calc-time__time">{savedAt.time}</span>
+                      </span>
+                    </small>
+                  </div>
+                  <div className="mt-2 small row g-1 text-center">
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">⚖️ {summary.totalDough}g</span></div>
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">💧 {summary.hydration}%</span></div>
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🌾 {summary.flour}g</span></div>
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🫙 {summary.starter}g</span></div>
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🚰 {summary.water}g</span></div>
+                    <div className="col-4 col-md-2"><span className="d-inline-block text-nowrap">🧂 {summary.salt}g</span></div>
                   </div>
                   <div className="d-flex justify-content-end gap-2 mt-2">
                     <button
                       type="button"
                       className="btn btn-sm btn-outline-primary"
                       onClick={() => {
-                        const draftName = draftNamesById[entry.id] ?? entry.name;
-                        const isDirty = getNormalizedSaveName(draftName) !== getNormalizedSaveName(entry.name);
                         if (isDirty) {
                           handleRenameSave(entry.id);
                           return;
@@ -278,10 +334,19 @@ const Calculator = () => {
                         handleLoad(entry.id);
                       }}
                     >
-                      {getNormalizedSaveName(draftNamesById[entry.id] ?? entry.name) !== getNormalizedSaveName(entry.name) ? 'Spichere' : 'Lade'}
+                      {isDirty ? (
+                        <><i className="fa-solid fa-floppy-disk me-1" aria-hidden="true"></i>Spichere</>
+                      ) : (
+                        <><i className="fa-solid fa-download me-1" aria-hidden="true"></i>Lade</>
+                      )}
                     </button>
-                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(entry.id)}>Lösche</button>
+                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(entry.id)} aria-label="Lösche Speicherstand">
+                      <i className="fa-solid fa-trash" aria-hidden="true"></i>
+                    </button>
                   </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
