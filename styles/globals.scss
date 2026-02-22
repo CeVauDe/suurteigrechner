@@ -139,3 +139,50 @@ body {
     border-color: $form-border;
     color: $dark;
 }
+
+.saved-calc-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: rgba($dark, 0.5);
+}
+
+.saved-calc-time__icon {
+    flex: 0 0 auto;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: 1;
+    color: $dark;
+}
+
+.saved-calc-time__text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.saved-calc-edit-icon {
+    font-size: 0.8em;
+    color: rgba($dark, 0.5);
+    line-height: 1;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0 !important;
+}
+
+.saved-calc-title-trigger {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    padding-right: 1.1rem !important;
+}
+
+.saved-calc-title-text {
+    display: inline-block;
+}
