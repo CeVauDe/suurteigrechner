@@ -31,7 +31,7 @@
     "autoprefixer": "latest",
     "postcss": "latest",
     "sass": "^1.97.1",
-    "typescript": "^5.0.0",
+    "typescript": "^6.0.0",
     "vitest": "^4.0.16"
   }
 }
