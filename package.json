@@ -14,7 +14,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "better-sqlite3": "^12.5.0",
+    "better-sqlite3": "^13.0.0",
     "bootstrap": "^5.3.8",
     "isomorphic-dompurify": "^2.35.0",
     "next": "^16.0.10",
