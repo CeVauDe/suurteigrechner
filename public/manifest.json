@@ -1,7 +1,7 @@
 {
   "name": "Suurteigrechner",
   "short_name": "Suurteig",
-  "description": "A sourdough calculator to get the hydration right",
+  "description": "A browser-based sourdough calculator with local saved recipes",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

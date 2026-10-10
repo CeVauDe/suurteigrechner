@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3000",
     "lint": "next lint",
     "test": "vitest",
     "test:run": "vitest run"
@@ -14,20 +13,14 @@
     "node": ">=18"
   },
   "dependencies": {
-    "better-sqlite3": "^12.5.0",
     "bootstrap": "^5.3.8",
-    "isomorphic-dompurify": "^2.35.0",
     "next": "^16.0.10",
-    "next-pwa": "^5.6.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "web-push": "^3.6.7"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
-    "@types/web-push": "^3.6.4",
     "autoprefixer": "latest",
     "postcss": "latest",
     "sass": "^1.97.1",

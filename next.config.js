@@ -1,24 +1,6 @@
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  swSrc: 'public/sw.js',
-  disable: process.env.NODE_ENV === 'development',
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'google-fonts-cache',
-        expiration: {
-          maxEntries: 20,
-        },
-      },
-    },
-  ],
-})
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: 'export',
   reactStrictMode: true,
   poweredByHeader: false,
   sassOptions: {
@@ -27,4 +9,4 @@ const nextConfig = {
   turbopack: {}
 }
 
-module.exports = withPWA(nextConfig)
+module.exports = nextConfig

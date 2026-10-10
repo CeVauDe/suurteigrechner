@@ -1,86 +1,65 @@
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
+const CACHE_NAME = 'suurteigrechner-static-v1';
+const PRECACHE_URLS = ['/', '/calculator.html'];
 
-// Precache manifest
-workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
-
-self.skipWaiting();
-workbox.core.clientsClaim();
-workbox.precaching.cleanupOutdatedCaches();
-
-// Cache images
-workbox.routing.registerRoute(
-  ({ request }) => request.destination === 'image',
-  new workbox.strategies.CacheFirst({
-    cacheName: 'images',
-    plugins: [new workbox.expiration.ExpirationPlugin({ maxEntries: 50 })],
-  })
-);
-
-// Cache CSS and JS
-workbox.routing.registerRoute(
-  ({ request }) => request.destination === 'style' || request.destination === 'script',
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'static-resources' })
-);
-
-// Network first for HTML
-workbox.routing.registerRoute(
-  ({ request }) => request.mode === 'navigate',
-  new workbox.strategies.NetworkFirst({ cacheName: 'pages' })
-);
-
-// Handle SKIP_WAITING message
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-// Push Notification Event
-self.addEventListener('push', (event) => {
-  let data = { title: 'Suurteigrechner', body: 'Time to check your sourdough!' };
-  
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data = { title: 'Suurteigrechner', body: event.data.text() };
-    }
-  }
-
-  const options = {
-    body: data.body,
-    icon: data.icon || '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/'
-    }
-  };
-
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-// Notification Click Event
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      const url = event.notification.data.url;
-      
-      // If a window is already open, focus it
-      for (const client of clientList) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(async (cache) => {
+        const calculatorPage = await cache.match('/calculator.html');
+        if (calculatorPage) {
+          await cache.put('/calculator', calculatorPage);
         }
-      }
-      
-      // Otherwise, open a new window
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
+      })
+      .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.startsWith('suurteigrechner-') && cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+
+  if (request.method !== 'GET' || url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(async (response) => {
+          if (response.ok) {
+            await caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cachedPage = await caches.match(request);
+          return cachedPage || await caches.match('/');
+        })
+    );
+    return;
+  }
+
+  if (request.destination !== 'document') {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request).then(async (response) => {
+        if (response.ok && response.type === 'basic') {
+          await caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+        }
+        return response;
+      }))
+    );
+  }
 });

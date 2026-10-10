@@ -10,17 +10,9 @@ node_modules
 # compiled typescript output
 /dist
 
-# local sqlite database
-/data
-*.sqlite
-*.sqlite-*
-
 # Deal with environment files
 .env
 .env.*
-
-# We'll allow an example .env file which can be copied
-!.env.example
 
 # Coverage directory used by testing tools
 coverage
@@ -36,6 +28,7 @@ yarn-error.log*
 
 # next.js
 .next
+/out
 
 # sveltekit
 /.svelte-kit

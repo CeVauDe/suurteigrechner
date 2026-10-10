@@ -4,8 +4,7 @@ import { useRouter } from 'next/router'
 
 const links = [
     { href: '/', label: 'Suurteigrechner' },
-    { href: '/guestbook', label: 'Gästebuech' },
-    { href: '/feedingplan', label: 'Füertterigsplan' }
+    { href: '/calculator', label: 'Rechner' }
 ]
 
 export default function Nav() {
