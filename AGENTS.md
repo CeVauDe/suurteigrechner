@@ -3,16 +3,16 @@
 This document provides essential context for AI agents working on the **Suurteigrechner** project.
 
 ## Project Overview
-Suurteigrechner is a specialized web application designed for sourdough bakers. It calculates ingredient ratios (flour, water, starter) based on desired hydration levels and total dough mass. It also includes a feeding plan for starter maintenance and a simple guestbook.
+Suurteigrechner is a browser-based sourdough calculator. It calculates ingredient ratios (flour, water, starter) based on desired hydration levels and total dough mass. It can be exported as a static site.
 
 ## Tech Stack
 - **Framework**: Next.js (Pages Router)
 - **Language**: TypeScript
 - **UI Library**: React 19
 - **Styling**: Bootstrap 5, Sass (SCSS)
-- **Database**: SQLite (via `better-sqlite3`)
-- **PWA**: `next-pwa` for offline capabilities
-- **Deployment**: Docker & Docker Compose (optimized for Railway)
+- **Static export**: Next.js output is written to `/out`
+- **PWA**: Native service worker and web app manifest in `/public`
+- **Persistence**: Named calculator saves are stored in browser `localStorage`
 
 ## Key Directories & Files
 - `/lib/calc.ts`: Core mathematical logic for sourdough calculations.
@@ -22,10 +22,8 @@ Suurteigrechner is a specialized web application designed for sourdough bakers. 
 - `/lib/calculatorSaves.ts`: LocalStorage repository for named calculator saves.
 - `/lib/calculatorSaveHelpers.ts` & `/lib/calculatorSaveUiState.ts`: Save-name validation and UI action state helpers.
 - `/pages/calculator.tsx`: Main calculator interface.
-- `/pages/feedingplan.tsx`: Starter maintenance logic.
-- `/pages/guestbook.tsx`: Guestbook UI.
-- `/pages/api/entries.ts`: API routes for guestbook persistence.
-- `/public/sw.js` & `manifest.json`: PWA configuration.
+- `/pages/index.tsx` and `/pages/calculator.tsx`: Calculator routes.
+- `/public/sw.js` & `/public/manifest.json`: Offline caching and install metadata.
 - `/styles/globals.scss`: Global styles and Bootstrap overrides.
 
 ## Core Logic (Sourdough Math)
@@ -46,11 +44,10 @@ The calculator handles the relationship between:
 ## Development Guidelines
 - **State Management**: Uses `useReducer` for the calculator to handle interdependent field updates.
 - **Calculator Restore**: Prefer reducer-level state restore (`RESTORE_STATE`) for loading a saved calculation, rather than replaying field updates.
-- **Database**: SQLite is stored in `/data/db.sqlite` (mapped via Docker volume in production).
 - **Styling**: Prefer Bootstrap classes for layout and SCSS for custom components.
-- **PWA**: Ensure any new assets are correctly cached in the service worker if necessary.
-- **Testing**: Run tests with `npm run test:run`. Changes to `lib/db.ts` require corresponding tests in `lib/db.test.ts` and must pass before committing.
-- **Build Validation**: After each implementation, run `npm run build` and fix any build errors before finishing.
+- **PWA**: Ensure assets needed offline are covered by the service worker.
+- **Testing**: Run tests with `npm run test:run`.
+- **Build Validation**: After each implementation, run `npm run build` and fix any build errors before finishing. Confirm static-exported assets are generated under `out/`.
 
 ## Testing Requirements
 - **Calculator save modules** (`lib/calculatorState.ts`, `lib/calculatorSnapshot.ts`, `lib/calculatorSaves.ts`, `lib/calculatorSaveHelpers.ts`, `lib/calculatorSaveUiState.ts`):
@@ -59,14 +56,8 @@ The calculator handles the relationship between:
   3. Keep tests Node-compatible (mock localStorage where needed)
   4. Cover corruption recovery and guard behavior for invalid/empty input
 
-- **Database module (`lib/db.ts`)**: Every change to this file requires:
-  1. Writing or updating tests in `lib/db.test.ts`
-  2. Running `npm run test:run` and ensuring all tests pass
-  3. Tests use real SQLite databases (temp files) with mocked `web-push` module
-  4. Set `DISABLE_DISPATCHER=true` in tests to prevent auto-starting the notification dispatcher
-
 ## Common Tasks
 - **Updating Math**: Check `lib/calc.ts` for ingredient calculation formulas.
 - **UI Changes**: Most UI components are in `/components` or directly in `/pages`.
 - **Calculator Save/Load**: Use `calculatorSnapshot` + `calculatorSaves` APIs instead of direct localStorage access in page components.
-- **API/DB**: Guestbook entries are handled in `lib/db.ts` and `pages/api/entries.ts`.
+- **Static deployment**: Publish the contents of `out/`; configure the host to resolve `/calculator` to `calculator.html` for direct requests if it does not provide clean URLs by default.
